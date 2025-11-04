@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tour Search App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f7f7f7;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    .search-section {
+      margin: 20px 0;
+    }
+    input[type="text"] {
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tr:hover {background-color: #f1f1f1;}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Tour Search App</h2>
+
+    <div class="search-section">
+      <input type="text" id="searchInput" placeholder="Search by Tour Name or Option" disabled>
+    </div>
+
+    <table id="resultTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>Tour Name</th>
+          <th>Option Name</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    let jsonData = [];
+    const searchInput = document.getElementById('searchInput');
+
+    // Automatically load JSON file from same folder
+    fetch('data.json')
+      .then(response => response.json())
+      .then(data => {
+        // If JSON is wrapped inside { Tours: [...] }
+        if (data.Tours && Array.isArray(data.Tours)) {
+          jsonData = data.Tours;
+        } else if (Array.isArray(data)) {
+          jsonData = data;
+        } else {
+          alert("Invalid JSON structure");
+          return;
+        }
+        searchInput.disabled = false;
+      })
+      .catch(err => {
+        console.error("Failed to load JSON file:", err);
+        alert("Could not load JSON file. Make sure 'data.json' is in the same folder as this HTML file.");
+      });
+
+    // Search function
+    searchInput.addEventListener('input', function(e) {
+      const query = e.target.value.toLowerCase();
+      const tbody = document.querySelector('#resultTable tbody');
+      tbody.innerHTML = "";
+
+      const results = jsonData.filter(item => 
+        item.TourName?.toLowerCase().includes(query) ||
+        item.OptionName?.toLowerCase().includes(query)
+      );
+
+      if (results.length > 0) {
+        document.getElementById('resultTable').style.display = "table";
+        results.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.TourName ?? ''}</td>
+            <td>${item.OptionName ?? ''}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } else {
+        document.getElementById('resultTable').style.display = "none";
+      }
+    });
+  </script>
+</body>
+</html>
