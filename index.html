@@ -5,24 +5,46 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 40px;
+      margin: 0;
       background-color: #f7f7f7;
+      position: relative;
+      min-height: 100vh;
     }
+
+    /* Logo at top-left */
+    .logo {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      width: 100px;
+      height: 100px;
+      background-color: white;
+      padding: 5px;
+      border-radius: 15px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      z-index: 1000;
+      object-fit: contain;
+    }
+
     .container {
       max-width: 700px;
-      margin: auto;
+      margin: 140px auto 80px auto; /* top margin so logo doesn't overlap */
       background: white;
       padding: 30px;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      position: relative;
     }
+
     h2 {
       text-align: center;
       color: #333;
     }
+
     .search-section {
       margin: 20px 0;
     }
+
     input[type="text"] {
       padding: 10px;
       font-size: 14px;
@@ -30,23 +52,58 @@
       border: 1px solid #ccc;
       width: 100%;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
     }
+
     th, td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #ddd;
     }
+
     th {
       background-color: #f2f2f2;
     }
-    tr:hover {background-color: #f1f1f1;}
+
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    /* Footer: Developed by */
+    .footer {
+      position: fixed;
+      bottom: 15px;
+      right: 15px;
+      background-color: #ff5722; /* brighter orange-red */
+      color: #fff;
+      font-weight: bold;
+      padding: 10px 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-family: Arial, sans-serif;
+      z-index: 1000;
+      animation: pulse 1.5s infinite;
+      font-size: 14px;
+    }
+
+    /* Attention seeker animation */
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
   </style>
 </head>
 <body>
+
+  <!-- Logo -->
+  <img src="123.png" alt="Logo" class="logo">
+
+  <!-- Main container -->
   <div class="container">
     <h2>Tour Search App</h2>
 
@@ -65,6 +122,9 @@
     </table>
   </div>
 
+  <!-- Footer -->
+  <div class="footer">Developed by SAURAV CHAUHAN</div>
+
   <script>
     let jsonData = [];
     const searchInput = document.getElementById('searchInput');
@@ -73,7 +133,6 @@
     fetch('data.json')
       .then(response => response.json())
       .then(data => {
-        // If JSON is wrapped inside { Tours: [...] }
         if (data.Tours && Array.isArray(data.Tours)) {
           jsonData = data.Tours;
         } else if (Array.isArray(data)) {
@@ -115,5 +174,6 @@
       }
     });
   </script>
+
 </body>
 </html>
