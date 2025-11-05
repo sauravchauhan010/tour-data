@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tour Search App</title>
   <style>
     body {
@@ -26,8 +28,59 @@
       object-fit: contain;
     }
 
+    /* Password modal */
+    .password-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    .password-modal-content {
+      background-color: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+
+    .password-modal input {
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 80%;
+      margin: 10px 0;
+    }
+
+    .password-modal button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #ff5722;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .password-modal button:hover {
+      background-color: #e64a19;
+    }
+
+    /* Main content (hidden by default) */
+    .content {
+      display: none;
+    }
+
+    /* Content styling */
     .container {
-      max-width: 700px;
+      max-width: 900px;
       margin: 140px auto 80px auto; /* top margin so logo doesn't overlap */
       background: white;
       padding: 30px;
@@ -42,15 +95,24 @@
     }
 
     .search-section {
-      margin: 20px 0;
+      position: sticky;
+      top: 0;
+      background-color: white;
+      padding: 10px;
+      z-index: 100;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
     }
 
-    input[type="text"] {
+    .search-section input[type="text"], 
+    .search-section select {
       padding: 10px;
       font-size: 14px;
       border-radius: 5px;
       border: 1px solid #ccc;
-      width: 100%;
+      width: 48%; /* Decrease the width slightly to fit side-by-side */
     }
 
     table {
@@ -103,60 +165,120 @@
   <!-- Logo -->
   <img src="123.png" alt="Logo" class="logo">
 
-  <!-- Main container -->
-  <div class="container">
-    <h2>Tour Search App</h2>
-
-    <div class="search-section">
-      <input type="text" id="searchInput" placeholder="Search by Tour Name or Option" disabled>
+  <!-- Password Modal (hidden by default) -->
+  <div id="passwordModal" class="password-modal">
+    <div class="password-modal-content">
+      <h2>Please Enter Password</h2>
+      <input type="password" id="passwordInput" placeholder="Enter Password">
+      <button onclick="validatePassword()">Submit</button>
     </div>
-
-    <table id="resultTable" style="display:none;">
-      <thead>
-        <tr>
-          <th>Tour Name</th>
-          <th>Option Name</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
   </div>
 
-  <!-- Footer -->
-  <div class="footer">Developed by SAURAV CHAUHAN</div>
+  <!-- Main Content (hidden by default) -->
+  <div class="content">
+    <!-- Main container -->
+    <div class="container">
+      <h2>Tour Search App</h2>
+
+      <div class="search-section">
+        <!-- Search by Tour Name, Option, or Tour Type -->
+        <input type="text" id="searchInput" placeholder="Search by Tour Name, Option, or Tour Type" disabled>
+        <select id="tourTypeSelect" disabled>
+          <option value="">Select Tour Type</option>
+          <!-- Dynamic options will be added via JS -->
+        </select>
+      </div>
+
+      <table id="resultTable" style="display:none;">
+        <thead>
+          <tr>
+            <th>Tour Type</th>
+            <th>Tour Name</th>
+            <th>Option Name</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">Developed by SAURAV CHAUHAN</div>
+  </div>
 
   <script>
     let jsonData = [];
     const searchInput = document.getElementById('searchInput');
+    const tourTypeSelect = document.getElementById('tourTypeSelect');
 
-    // Automatically load JSON file from same folder
-    fetch('data.json')
-      .then(response => response.json())
-      .then(data => {
-        if (data.Tours && Array.isArray(data.Tours)) {
-          jsonData = data.Tours;
-        } else if (Array.isArray(data)) {
-          jsonData = data;
-        } else {
-          alert("Invalid JSON structure");
-          return;
-        }
-        searchInput.disabled = false;
-      })
-      .catch(err => {
-        console.error("Failed to load JSON file:", err);
-        alert("Could not load JSON file. Make sure 'data.json' is in the same folder as this HTML file.");
+    // Validate password
+    function validatePassword() {
+      const enteredPassword = document.getElementById('passwordInput').value;
+      const correctPassword = '12123'; // Set your password here
+
+      if (enteredPassword === correctPassword) {
+        document.getElementById('passwordModal').style.display = 'none'; // Hide password modal
+        document.querySelector('.content').style.display = 'block'; // Show main content
+        loadTourData(); // Load the tour data once the password is correct
+      } else {
+        alert('Incorrect Password!');
+      }
+    }
+
+    // Automatically load JSON file from the same folder after password validation
+    function loadTourData() {
+      fetch('data.json')
+        .then(response => response.json())
+        .then(data => {
+          // Assuming the payload structure matches what was provided
+          if (Array.isArray(data)) {
+            jsonData = data;
+            populateTourTypes(data); // Add tour type options to the select dropdown
+          } else {
+            alert("Invalid JSON structure");
+            return;
+          }
+          searchInput.disabled = false;
+          tourTypeSelect.disabled = false;
+        })
+        .catch(err => {
+          console.error("Failed to load JSON file:", err);
+          alert("Could not load JSON file. Make sure 'data.json' is in the same folder as this HTML file.");
+        });
+    }
+
+    // Populate the Tour Type filter dropdown
+    function populateTourTypes(data) {
+      const tourTypes = [...new Set(data.map(item => item.TourTypeName))];
+      tourTypes.forEach(type => {
+        const option = document.createElement('option');
+        option.value = type;
+        option.textContent = type;
+        tourTypeSelect.appendChild(option);
       });
+    }
 
     // Search function
     searchInput.addEventListener('input', function(e) {
-      const query = e.target.value.toLowerCase();
+      filterResults();
+    });
+
+    // Tour Type Filter
+    tourTypeSelect.addEventListener('change', function(e) {
+      filterResults();
+    });
+
+    // Filter Results based on input and selected tour type
+    function filterResults() {
+      const query = searchInput.value.toLowerCase();
+      const selectedTourType = tourTypeSelect.value.toLowerCase();
       const tbody = document.querySelector('#resultTable tbody');
-      tbody.innerHTML = "";
+      tbody.innerHTML = ""; // Clear previous results
 
       const results = jsonData.filter(item => 
-        item.TourName?.toLowerCase().includes(query) ||
-        item.OptionName?.toLowerCase().includes(query)
+        (item.TourName?.toLowerCase().includes(query) ||
+        item.OptionName?.toLowerCase().includes(query) ||
+        item.TourTypeName?.toLowerCase().includes(query)) &&
+        (selectedTourType === "" || item.TourTypeName?.toLowerCase() === selectedTourType)
       );
 
       if (results.length > 0) {
@@ -164,6 +286,7 @@
         results.forEach(item => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
+            <td>${item.TourTypeName ?? ''}</td>
             <td>${item.TourName ?? ''}</td>
             <td>${item.OptionName ?? ''}</td>
           `;
@@ -172,7 +295,7 @@
       } else {
         document.getElementById('resultTable').style.display = "none";
       }
-    });
+    }
   </script>
 
 </body>
