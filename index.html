@@ -106,8 +106,8 @@
       margin-bottom: 20px;
     }
 
-    .search-section input[type="text"], 
-    .search-section select {
+    .search-section select, 
+    .search-section input[type="text"] {
       padding: 10px;
       font-size: 14px;
       border-radius: 5px;
@@ -181,12 +181,14 @@
       <h2>Tour Search App</h2>
 
       <div class="search-section">
-        <!-- Search by Tour Name, Option, or Tour Type -->
-        <input type="text" id="searchInput" placeholder="Search by Tour Name, Option, or Tour Type" disabled>
+        <!-- Tour Type Dropdown first -->
         <select id="tourTypeSelect" disabled>
           <option value="">Select Tour Type</option>
           <!-- Dynamic options will be added via JS -->
         </select>
+
+        <!-- Then Search Box -->
+        <input type="text" id="searchInput" placeholder="Search by Tour Name, Option, or Tour Type" disabled>
       </div>
 
       <table id="resultTable" style="display:none;">
