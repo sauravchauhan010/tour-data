@@ -1,313 +1,498 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tour Search App</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background-color: #f7f7f7;
-      position: relative;
-      min-height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Information - Rayna Tours</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains+Mono', monospace; }
+        [v-cloak] { display: none; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 
-    /* Logo at top-left */
-    .logo {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      width: 100px;
-      height: 100px;
-      background-color: white;
-      padding: 5px;
-      border-radius: 15px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
-      z-index: 1000;
-      object-fit: contain;
-    }
+        .table-container {
+            max-height: calc(100vh - 320px);
+            overflow-y: auto;
+        }
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background-color: #f9fafb;
+        }
+        
+        @keyframes slow-blink {
+            0%, 100% { opacity: 1; filter: brightness(1) drop-shadow(0 0 0px rgba(59, 130, 246, 0)); }
+            50% { opacity: 0.7; filter: brightness(1.1) drop-shadow(0 0 8px rgba(59, 130, 246, 0.4)); }
+        }
+        .animate-slow-blink {
+            animation: slow-blink 2s ease-in-out infinite;
+        }
 
-    /* Password modal */
-    .password-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-    }
+        .tree-branch {
+            position: relative;
+            padding-left: 2rem;
+        }
+        .tree-branch::before {
+            content: "";
+            position: absolute;
+            left: 0.75rem;
+            top: -1.2rem;
+            bottom: 1.25rem;
+            width: 2px;
+            background-color: #cbd5e1;
+        }
+        .tree-branch::after {
+            content: "";
+            position: absolute;
+            left: 0.75rem;
+            top: 1.25rem;
+            width: 0.75rem;
+            height: 2px;
+            background-color: #cbd5e1;
+        }
 
-    .password-modal-content {
-      background-color: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      text-align: center;
-    }
-
-    .password-modal input {
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      width: 80%;
-      margin: 10px 0;
-    }
-
-    .password-modal button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #ff5722;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .password-modal button:hover {
-      background-color: #e64a19;
-    }
-
-    /* Main content (hidden by default) */
-    .content {
-      display: none;
-    }
-
-    /* Content styling */
-    .container {
-      max-width: 1050px;
-      margin: 140px auto 80px auto; /* top margin so logo doesn't overlap */
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      position: relative;
-    }
-
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-
-    .search-section {
-      position: sticky;
-      top: 0;
-      background-color: white;
-      padding: 10px;
-      z-index: 100;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 20px;
-    }
-
-    .search-section select, 
-    .search-section input[type="text"] {
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      width: 48%; /* Decrease the width slightly to fit side-by-side */
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-
-    th, td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    tr:hover {
-      background-color: #f1f1f1;
-    }
-
-    /* Footer: Developed by */
-    .footer {
-      position: fixed;
-      bottom: 15px;
-      right: 15px;
-      background-color: #ff5722; /* brighter orange-red */
-      color: #fff;
-      font-weight: bold;
-      padding: 10px 15px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      font-family: Arial, sans-serif;
-      z-index: 1000;
-      animation: pulse 1.5s infinite;
-      font-size: 14px;
-    }
-
-    /* Attention seeker animation */
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-  </style>
+        .highlight {
+            background-color: #fde047;
+            color: #1e293b;
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: 700;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-gray-50 antialiased custom-scrollbar flex flex-col min-h-screen">
+    <div id="app" v-cloak class="flex-grow p-4 lg:p-6">
+        <div class="max-w-[1600px] mx-auto">
+            
+            <!-- Header Section -->
+            <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
+                <div class="flex-shrink-0">
+                    <a href="https://raynab2b.com" target="_blank" class="block transition-transform hover:scale-105 active:scale-95">
+                        <img src="https://d1i3enf1i5tb1f.cloudfront.net/assets/Images/AGT-31082/logo.png" alt="Rayna Tours Logo" class="h-10 md:h-12 w-auto object-contain">
+                    </a>
+                </div>
 
-  <!-- Logo -->
-  <a href="https://raynab2b.com/"><img src="123.png" alt="Logo" class="logo"></a>
+                <h1 class="hidden lg:block text-xl font-black text-gray-900 tracking-tight uppercase">
+                    Tour Information
+                </h1>
 
-  <!-- Password Modal (hidden by default) -->
-  <div id="passwordModal" class="password-modal">
-    <div class="password-modal-content">
-      <h2>Please Enter Password</h2>
-      <input type="password" id="passwordInput" placeholder="Enter Password">
-      <button onclick="validatePassword()">Submit</button>
-    </div>
-  </div>
+                <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                    <div class="relative flex w-full sm:w-64 md:w-80">
+                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">API Token / Key</label>
+                        <input
+                            type="password"
+                            v-model="apiKey"
+                            placeholder="Enter Key..."
+                            class="w-full text-xs p-2 rounded-l-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+                        />
+                        <select 
+                            v-model="authHeaderType"
+                            class="bg-gray-50 border border-l-0 border-gray-200 px-2 text-[9px] font-bold text-gray-600 rounded-r-xl outline-none"
+                        >
+                            <option value="Bearer">Bearer</option>
+                            <option value="apikey">Header</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button 
+                            @click="startUAEDataCrawl"
+                            :disabled="isCrawling"
+                            class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-xl font-bold text-xs hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[100px]"
+                        >
+                            <svg v-if="isCrawling" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                            {{ isCrawling ? 'Syncing...' : 'Sync Data' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
 
-  <!-- Main Content (hidden by default) -->
-  <div class="content">
-    <!-- Main container -->
-    <div class="container">
-      <h2>Tour Search App</h2>
+            <!-- Consolidated Search & Stats Bar -->
+            <div class="bg-white p-4 rounded-3xl shadow-sm border border-gray-200 mb-6">
+                <div class="flex flex-col lg:flex-row items-center gap-6">
+                    <div class="w-full lg:flex-grow relative">
+                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Inventory Search</label>
+                        <svg class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y2="16.65"/></svg>
+                        <input
+                            type="text"
+                            v-model="searchTerm"
+                            placeholder="Type tour name, city or ID to filter..."
+                            class="w-full p-3 pl-12 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50 text-sm font-medium"
+                        />
+                    </div>
 
-      <div class="search-section">
-        <!-- Tour Type Dropdown first -->
-        <select id="tourTypeSelect" disabled>
-          <option value="">Select Tour Type</option>
-          <!-- Dynamic options will be added via JS -->
-        </select>
+                    <div class="hidden lg:block w-px h-10 bg-gray-100"></div>
 
-        <!-- Then Search Box -->
-        <input type="text" id="searchInput" placeholder="Search by Tour Name, Option, or Tour Type" disabled>
-      </div>
+                    <div class="w-full lg:w-auto grid grid-cols-2 sm:grid-cols-4 gap-4 flex-shrink-0">
+                        <div v-for="(val, label) in { Cities: data.cities.length, Tours: data.tours.length, Options: data.options.length, Last: lastSyncShort }" 
+                             class="flex flex-col justify-center px-4 py-1.5 min-w-[90px]">
+                            <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{{ label }}</span>
+                            <span class="text-base font-black text-gray-900 truncate">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
 
-      <table id="resultTable" style="display:none;">
-        <thead>
-          <tr>
-            <th>Tour Type</th>
-            <th>Tour Name</th>
-            <th>Option Name</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+                <!-- Progress Bar -->
+                <div v-if="isCrawling" class="mt-4 px-2 space-y-2">
+                    <div class="flex justify-between items-end">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold uppercase text-blue-600 tracking-wider">{{ progress.label }}</span>
+                            <span class="text-[9px] text-gray-400 truncate max-w-xs md:max-w-md">{{ progress.subLabel }}</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-gray-400">{{ progress.current }} / {{ progress.total }}</span>
+                    </div>
+                    <div class="w-full bg-gray-100 h-1 rounded-full overflow-hidden">
+                        <div 
+                            class="bg-blue-600 h-full transition-all duration-300"
+                            :style="{ width: (progress.total > 0 ? (progress.current / progress.total * 100) : 0) + '%' }"
+                        ></div>
+                    </div>
+                </div>
+
+                <div v-if="error" class="mt-3 p-2 bg-red-50 border border-red-100 rounded-xl text-[11px] text-red-700 font-medium">
+                    {{ error }}
+                </div>
+                <div v-if="successMsg" class="mt-3 p-2 bg-green-50 border border-green-100 rounded-xl text-[11px] text-green-700 font-medium">
+                    {{ successMsg }}
+                </div>
+            </div>
+
+            <!-- Results Table -->
+            <div class="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+                <div v-if="filteredResults.length > 0" class="table-container custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50/80 backdrop-blur-md border-b border-gray-100">
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-24"></th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-40 text-center">IDs</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Name</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-56">Location/Type</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-20 text-right">Copy</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            <template v-for="(res, i) in filteredResults" :key="res.type + res.id + i">
+                                <tr class="hover:bg-blue-50/30 transition-colors group">
+                                    <td class="px-6 py-4">
+                                        <span :class="['text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter', iconBgClass(res.type)]">
+                                            {{ res.type }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-mono font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 text-center shadow-sm" v-html="highlightText(res.id)">
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors" v-html="highlightText(res.label)"></div>
+                                        <div v-if="res.meta" class="text-[9px] font-bold text-gray-400 uppercase mt-0.5 tracking-tight">
+                                            {{ res.meta }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-bold text-gray-700" v-html="highlightText(res.sub)"></div>
+                                        <div v-if="res.subMeta" class="text-[10px] text-purple-600 font-black uppercase mt-0.5">{{ res.subMeta }}</div>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <button @click="copyId(res.id)" class="p-2 text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all active:scale-90">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Nested Options -->
+                                <template v-if="res.type === 'Tour' && res.nestedOptions && res.nestedOptions.length > 0">
+                                    <tr v-for="opt in res.nestedOptions" :key="'opt'+opt.id" class="bg-gray-50/30 hover:bg-indigo-50/40 transition-colors group">
+                                        <td class="px-6 py-2.5">
+                                            <div class="tree-branch">
+                                                <span class="text-[8px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded uppercase tracking-tighter border border-indigo-200 shadow-xs">
+                                                    Option
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-2.5">
+                                            <div class="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded border border-indigo-100 text-center shadow-xs" v-html="highlightText(opt.id)">
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-2.5">
+                                            <div class="text-xs font-semibold text-gray-600 italic leading-snug" v-html="highlightText(opt.label)"></div>
+                                        </td>
+                                        <td class="px-6 py-2.5">
+                                            <div v-if="res.meta" class="text-[10px] text-indigo-600 font-black uppercase tracking-tight">
+                                                {{ res.meta }}
+                                            </div>
+                                            <div v-if="opt.subType" class="text-[9px] font-bold text-purple-500 uppercase mt-0.5 tracking-tighter">{{ opt.subType }}</div>
+                                        </td>
+                                        <td class="px-6 py-2.5 text-right">
+                                            <button @click="copyId(opt.id)" class="p-1.5 text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all active:scale-90">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div v-else class="p-24 text-center">
+                    <div class="inline-block p-6 rounded-full bg-gray-50 mb-4 border border-gray-100 shadow-inner">
+                        <svg class="w-10 h-10 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </div>
+                    <p class="text-lg font-bold text-gray-500 italic">No matches found in database.</p>
+                    <p class="text-sm text-gray-400 mt-1">Start typing to filter results.</p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
-    <div class="footer">Developed by SAURAV CHAUHAN</div>
-  </div>
+    <footer class="bg-white border-t border-gray-100 py-6 mt-auto">
+        <div class="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-3">
+                <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Powered By</span>
+                <span class="text-sm font-black text-blue-600 tracking-tight">Rayna Tours & Travels</span>
+                <span class="text-[10px] text-gray-300 font-mono ml-4 hidden md:inline">v2.1.8-prod</span>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Developed By</span>
+		
+                <a href="https://www.instagram.com/the_volleydrum" target="_blank"
+   class="inline-block bg-blue-600 text-white text-[12px] font-black px-6 py-2.5 rounded-full tracking-wider shadow-lg animate-slow-blink cursor-pointer">
+    SAURAV CHAUHAN
+</a>
 
-  <script>
-    let jsonData = [];
-    const searchInput = document.getElementById('searchInput');
-    const tourTypeSelect = document.getElementById('tourTypeSelect');
+            </div>
+        </div>
+    </footer>
 
-    // Validate password
-    function validatePassword() {
-      const enteredPassword = document.getElementById('passwordInput').value;
-      const correctPassword = '12123'; // Set your password here
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
 
-      if (enteredPassword === correctPassword) {
-        document.getElementById('passwordModal').style.display = 'none'; // Hide password modal
-        document.querySelector('.content').style.display = 'block'; // Show main content
-        loadTourData(); // Load the tour data once the password is correct
-      } else {
-        alert('Incorrect Password!');
-      }
-    }
+        createApp({
+            setup() {
+                const UAE_COUNTRY_ID = 13063;
+                const STORAGE_KEY = 'rayna_uae_data_v2';
+                const AUTH_KEY = 'rayna_explorer_auth';
 
-    // Automatically load JSON file from the same folder after password validation
-    function loadTourData() {
-      fetch('data.json')
-        .then(response => response.json())
-        .then(data => {
-          // Assuming the payload structure matches what was provided
-          if (Array.isArray(data)) {
-            jsonData = data;
-            populateTourTypes(data); // Add tour type options to the select dropdown
-          } else {
-            alert("Invalid JSON structure");
-            return;
-          }
-          searchInput.disabled = false;
-          tourTypeSelect.disabled = false;
-        })
-        .catch(err => {
-          console.error("Failed to load JSON file:", err);
-          alert("Could not load JSON file. Make sure 'data.json' is in the same folder as this HTML file.");
-        });
-    }
+                const apiKey = ref('');
+                const authHeaderType = ref('Bearer');
+                const baseUrl = 'https://activities.raynatours.com';
+                const searchTerm = ref('');
+                const isCrawling = ref(false);
+                const error = ref(null);
+                const successMsg = ref(null);
+                const lastSync = ref(null);
+                const progress = ref({ current: 0, total: 0, label: '', subLabel: '' });
+                const data = ref({ countries: [{ countryId: 13063, countryName: 'UAE' }], cities: [], tours: [], options: [] });
 
-    // Populate the Tour Type filter dropdown
-    function populateTourTypes(data) {
-      const tourTypes = [...new Set(data.map(item => item.TourTypeName))];
-      tourTypes.forEach(type => {
-        const option = document.createElement('option');
-        option.value = type;
-        option.textContent = type;
-        tourTypeSelect.appendChild(option);
-      });
-    }
+                onMounted(() => {
+                    const savedAuth = localStorage.getItem(AUTH_KEY);
+                    if (savedAuth) {
+                        try {
+                            const parsed = JSON.parse(savedAuth);
+                            apiKey.value = parsed.token || '';
+                            authHeaderType.value = parsed.type || 'Bearer';
+                        } catch(e) {}
+                    }
 
-    // Search function
-    searchInput.addEventListener('input', function(e) {
-      filterResults();
-    });
+                    const savedData = localStorage.getItem(STORAGE_KEY);
+                    if (savedData) {
+                        try {
+                            const parsed = JSON.parse(savedData);
+                            data.value = parsed.payload;
+                            lastSync.value = parsed.timestamp;
+                        } catch(e) {}
+                    }
+                });
 
-    // Tour Type Filter
-    tourTypeSelect.addEventListener('change', function(e) {
-      filterResults();
-    });
+                const lastSyncShort = computed(() => {
+                    if (!lastSync.value) return 'Never';
+                    return lastSync.value.split(',')[1]?.trim() || lastSync.value;
+                });
 
-    // Filter Results based on input and selected tour type
-    function filterResults() {
-      const query = searchInput.value.toLowerCase();
-      const selectedTourType = tourTypeSelect.value.toLowerCase();
-      const tbody = document.querySelector('#resultTable tbody');
-      tbody.innerHTML = ""; // Clear previous results
+                const showSuccess = (msg) => {
+                    successMsg.value = msg;
+                    setTimeout(() => successMsg.value = null, 3000);
+                };
 
-      const results = jsonData.filter(item => 
-        (item.TourName?.toLowerCase().includes(query) ||
-        item.OptionName?.toLowerCase().includes(query) ||
-        item.TourTypeName?.toLowerCase().includes(query)) &&
-        (selectedTourType === "" || item.TourTypeName?.toLowerCase() === selectedTourType)
-      );
+                const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-      if (results.length > 0) {
-        document.getElementById('resultTable').style.display = "table";
-        results.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${item.TourTypeName ?? ''}</td>
-            <td>${item.TourName ?? ''}</td>
-            <td>${item.OptionName ?? ''}</td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } else {
-        document.getElementById('resultTable').style.display = "none";
-      }
-    }
-  </script>
+                const copyId = (id) => {
+                    const el = document.createElement('textarea');
+                    el.value = String(id);
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    showSuccess(`ID ${id} copied!`);
+                };
 
+                const highlightText = (text) => {
+                    if (!text && text !== 0) return '';
+                    const term = searchTerm.value.trim();
+                    if (!term) return String(text);
+                    try {
+                        const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                        return String(text).replace(regex, '<span class="highlight">$1</span>');
+                    } catch(e) { return String(text); }
+                };
+
+                const fetchWithRetry = async (endpoint, payload = null, method = 'POST', retries = 5) => {
+                    let delay = 1000;
+                    for (let i = 0; i < retries; i++) {
+                        try {
+                            const url = `${baseUrl}${endpoint}`;
+                            const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+                            if (authHeaderType.value === 'Bearer') {
+                                headers['Authorization'] = `Bearer ${apiKey.value}`;
+                            } else {
+                                headers[authHeaderType.value] = apiKey.value;
+                            }
+                            const options = { method, headers };
+                            if (payload && method !== 'GET') options.body = JSON.stringify(payload);
+
+                            const response = await fetch(url, options);
+                            if (response.status === 429) { await sleep(delay); delay *= 2; continue; }
+                            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                            return await response.json();
+                        } catch (err) {
+                            if (i === retries - 1) throw err;
+                            await sleep(delay); delay *= 2;
+                        }
+                    }
+                };
+
+                const startUAEDataCrawl = async () => {
+                    if (!apiKey.value) { error.value = "Missing API Token."; return; }
+                    
+                    localStorage.setItem(AUTH_KEY, JSON.stringify({ token: apiKey.value, type: authHeaderType.value }));
+                    
+                    isCrawling.value = true;
+                    error.value = null;
+                    const newData = { countries: [{ countryId: UAE_COUNTRY_ID, countryName: 'UAE' }], cities: [], tours: [], options: [] };
+                    const seenTourIds = new Set();
+                    const seenOptionIds = new Set();
+
+                    try {
+                        progress.value = { current: 0, total: 1, label: 'Initializing', subLabel: 'Validating Region...' };
+                        const cityRes = await fetchWithRetry('/api/Tour/cities', { CountryId: UAE_COUNTRY_ID });
+                        if (cityRes.statuscode != 200) throw new Error(cityRes.error || "Access Denied");
+                        
+                        newData.cities = cityRes.result ? cityRes.result.map(c => ({ ...c, countryId: UAE_COUNTRY_ID })) : [];
+                        
+                        progress.value = { current: 0, total: newData.cities.length, label: 'Fetching Tours', subLabel: 'Gathering Region Data' };
+                        for (let i = 0; i < newData.cities.length; i++) {
+                            const city = newData.cities[i];
+                            progress.value.subLabel = `Scanning ${city.cityName}...`;
+                            const tourRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId: UAE_COUNTRY_ID, cityId: city.cityId });
+                            if (tourRes.result) {
+                                tourRes.result.forEach(t => {
+                                    if (!seenTourIds.has(t.tourId)) {
+                                        seenTourIds.add(t.tourId);
+                                        newData.tours.push({ ...t, cityName: city.cityName });
+                                    }
+                                });
+                            }
+                            progress.value.current = i + 1;
+                            await sleep(50);
+                        }
+
+                        progress.value = { current: 0, total: newData.tours.length, label: 'Finalizing', subLabel: 'Linking Service Options' };
+                        for (let i = 0; i < newData.tours.length; i++) {
+                            const tour = newData.tours[i];
+                            const optRes = await fetchWithRetry('/api/Tour/touroptionstaticdata', { tourId: tour.tourId, contractId: tour.contractId });
+                            
+                            if (optRes.result) {
+                                const list = optRes.result.touroption || optRes.result.touroptions || (Array.isArray(optRes.result) ? optRes.result : []);
+                                if (Array.isArray(list)) {
+                                    list.forEach(opt => {
+                                        const uniqueKey = `${tour.tourId}-${opt.tourOptionId}`;
+                                        if (!seenOptionIds.has(uniqueKey)) {
+                                            seenOptionIds.add(uniqueKey);
+                                            newData.options.push({ 
+                                                tourOptionId: opt.tourOptionId, 
+                                                optionName: opt.optionName, 
+                                                tourId: tour.tourId,
+                                                cityTourType: tour.cityTourType
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                            progress.value.current = i + 1;
+                            if (i % 10 === 0) await sleep(50);
+                        }
+
+                        data.value = newData;
+                        lastSync.value = new Date().toLocaleString();
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: lastSync.value, payload: newData }));
+                        showSuccess("Database Synced Successfully!");
+                    } catch (err) { error.value = err.message; } finally { isCrawling.value = false; }
+                };
+
+                const filteredResults = computed(() => {
+                    const s = searchTerm.value.toLowerCase().trim();
+                    if (!s) return [];
+                    const results = [];
+
+                    data.value.cities.forEach(c => {
+                        if (c.cityName?.toLowerCase().includes(s) || String(c.cityId) === s) {
+                            results.push({ type: 'City', label: c.cityName, id: c.cityId, sub: 'United Arab Emirates' });
+                        }
+                    });
+
+                    data.value.tours.forEach(t => {
+                        const tourMatches = t.tourName?.toLowerCase().includes(s) || String(t.tourId) === s;
+                        
+                        const tourOptions = data.value.options.filter(o => o.tourId === t.tourId);
+                        const matchedOptions = tourOptions.filter(o => 
+                            tourMatches || 
+                            o.optionName?.toLowerCase().includes(s) || 
+                            String(o.tourOptionId) === s
+                        ).map(o => ({ 
+                            id: o.tourOptionId, 
+                            label: o.optionName, 
+                            subType: o.cityTourType 
+                        }));
+
+                        if (tourMatches || matchedOptions.length > 0) {
+                            results.push({ 
+                                type: 'Tour', 
+                                label: t.tourName, 
+                                id: t.tourId, 
+                                sub: t.cityName, 
+                                meta: t.tourType, 
+                                subMeta: t.cityTourType, 
+                                nestedOptions: matchedOptions 
+                            });
+                        }
+                    });
+                    
+                    return results;
+                });
+
+                const iconBgClass = (type) => ({
+                    'City': 'bg-rose-100 text-rose-800 border border-rose-200',
+                    'Tour': 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+                    'Option': 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                }[type]);
+
+                return {
+                    apiKey, authHeaderType, searchTerm, isCrawling, error, progress, data, 
+                    startUAEDataCrawl, filteredResults, successMsg, lastSync, lastSyncShort,
+                    iconBgClass, copyId, highlightText
+                };
+            }
+        }).mount('#app');
+    </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
