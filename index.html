@@ -86,6 +86,18 @@
                 </h1>
 
                 <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                    <!-- Environment Dropdown -->
+                    <div class="relative flex w-full sm:w-40">
+                         <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Environment</label>
+                         <select 
+                            v-model="selectedEnv"
+                            class="w-full text-xs p-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm font-bold bg-white"
+                        >
+                            <option value="production">🚀 Production</option>
+                            <option value="sandbox">🧪 Sandbox</option>
+                        </select>
+                    </div>
+
                     <div class="relative flex w-full sm:w-64 md:w-80">
                         <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">API Token / Key</label>
                         <input
@@ -132,7 +144,7 @@
                     <div class="hidden lg:block w-px h-10 bg-gray-100"></div>
 
                     <div class="w-full lg:w-auto grid grid-cols-2 sm:grid-cols-4 gap-4 flex-shrink-0">
-                        <div v-for="(val, label) in { Cities: data.cities.length, Tours: data.tours.length, Options: data.options.length, Last: lastSyncShort }" 
+                        <div v-for="(val, label) in { Cities: data.cities.length, Tours: data.tours.length, Options: data.options.length, Env: selectedEnv.toUpperCase() }" 
                              class="flex flex-col justify-center px-4 py-1.5 min-w-[90px]">
                             <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{{ label }}</span>
                             <span class="text-base font-black text-gray-900 truncate">{{ val }}</span>
@@ -263,13 +275,11 @@
             </div>
             
             <div class="flex items-center gap-3">
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Designed  By</span>
-		
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Designed By</span>
                 <a href="https://www.instagram.com/the_volleydrum" target="_blank"
-   class="inline-block bg-blue-600 text-white text-[13px] font-black px-6 py-2.5 rounded-full tracking-wider shadow-lg animate-slow-blink cursor-pointer">
-    SAURAV CHAUHAN
-</a>
-
+                    class="inline-block bg-blue-600 text-white text-[13px] font-black px-6 py-2.5 rounded-full tracking-wider shadow-lg animate-slow-blink cursor-pointer">
+                    SAURAV CHAUHAN
+                </a>
             </div>
         </div>
     </footer>
@@ -285,7 +295,15 @@
 
                 const apiKey = ref('');
                 const authHeaderType = ref('Bearer');
-                const baseUrl = 'https://activities.raynatours.com';
+                const selectedEnv = ref('production'); // Default to production
+                
+                const envUrls = {
+                    production: 'https://activities.raynatours.com',
+                    sandbox: 'https://sandbox.raynatours.com'
+                };
+
+                const baseUrl = computed(() => envUrls[selectedEnv.value]);
+
                 const searchTerm = ref('');
                 const isCrawling = ref(false);
                 const error = ref(null);
@@ -301,6 +319,7 @@
                             const parsed = JSON.parse(savedAuth);
                             apiKey.value = parsed.token || '';
                             authHeaderType.value = parsed.type || 'Bearer';
+                            if (parsed.env) selectedEnv.value = parsed.env;
                         } catch(e) {}
                     }
 
@@ -350,7 +369,7 @@
                     let delay = 1000;
                     for (let i = 0; i < retries; i++) {
                         try {
-                            const url = `${baseUrl}${endpoint}`;
+                            const url = `${baseUrl.value}${endpoint}`;
                             const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
                             if (authHeaderType.value === 'Bearer') {
                                 headers['Authorization'] = `Bearer ${apiKey.value}`;
@@ -374,7 +393,11 @@
                 const startUAEDataCrawl = async () => {
                     if (!apiKey.value) { error.value = "Missing API Token."; return; }
                     
-                    localStorage.setItem(AUTH_KEY, JSON.stringify({ token: apiKey.value, type: authHeaderType.value }));
+                    localStorage.setItem(AUTH_KEY, JSON.stringify({ 
+                        token: apiKey.value, 
+                        type: authHeaderType.value,
+                        env: selectedEnv.value 
+                    }));
                     
                     isCrawling.value = true;
                     error.value = null;
@@ -383,7 +406,7 @@
                     const seenOptionIds = new Set();
 
                     try {
-                        progress.value = { current: 0, total: 1, label: 'Initializing', subLabel: 'Validating Region...' };
+                        progress.value = { current: 0, total: 1, label: 'Initializing', subLabel: `Validating ${selectedEnv.value.toUpperCase()} Region...` };
                         const cityRes = await fetchWithRetry('/api/Tour/cities', { CountryId: UAE_COUNTRY_ID });
                         if (cityRes.statuscode != 200) throw new Error(cityRes.error || "Access Denied");
                         
@@ -435,7 +458,7 @@
                         data.value = newData;
                         lastSync.value = new Date().toLocaleString();
                         localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: lastSync.value, payload: newData }));
-                        showSuccess("Database Synced Successfully!");
+                        showSuccess(`Database (${selectedEnv.value.toUpperCase()}) Synced Successfully!`);
                     } catch (err) { error.value = err.message; } finally { isCrawling.value = false; }
                 };
 
@@ -487,7 +510,7 @@
                 }[type]);
 
                 return {
-                    apiKey, authHeaderType, searchTerm, isCrawling, error, progress, data, 
+                    apiKey, authHeaderType, selectedEnv, searchTerm, isCrawling, error, progress, data, 
                     startUAEDataCrawl, filteredResults, successMsg, lastSync, lastSyncShort,
                     iconBgClass, copyId, highlightText
                 };
@@ -496,7 +519,3 @@
     </script>
 </body>
 </html>
-
-
-
-
