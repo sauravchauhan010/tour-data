@@ -67,6 +67,12 @@
             border-radius: 2px;
             font-weight: 700;
         }
+        
+        /* Ensure the select text doesn't get cut off */
+        select {
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body class="bg-gray-50 antialiased custom-scrollbar flex flex-col min-h-screen">
@@ -130,17 +136,20 @@
                         />
                     </div>
 
-                    <!-- Category Filter Dropdown (Filtered from cityTourType) -->
-                    <div class="w-full lg:w-72 relative">
+                    <!-- Enhanced Category Filter Dropdown (Wider with Tour Count) -->
+                    <div class="w-full lg:w-[420px] relative">
                         <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Tour Type Category</label>
                         <select 
                             v-model="selectedCategory"
-                            class="w-full p-3 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50 text-sm font-bold appearance-none cursor-pointer pr-10"
+                            class="w-full p-3 pl-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50 text-xs sm:text-sm font-bold appearance-none cursor-pointer pr-12"
                         >
-                            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                            <option value="All Categories">All Categories ({{ data.tours.length }})</option>
+                            <option v-for="cat in categoryList" :key="cat.name" :value="cat.name">
+                                {{ cat.name }} ({{ cat.count }})
+                            </option>
                         </select>
                         <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                         </div>
                     </div>
 
@@ -328,14 +337,19 @@
                     }
                 });
 
-                // Computed: Fetch unique categories from cityTourType parameter
-                const categories = computed(() => {
-                    // Extract from tours or options (wherever cityTourType is most prominent)
-                    const fromTours = data.value.tours.map(t => t.cityTourType);
-                    const fromOptions = data.value.options.map(o => o.cityTourType);
-                    
-                    const types = new Set([...fromTours, ...fromOptions].filter(Boolean));
-                    return ['All Categories', ...Array.from(types).sort()];
+                const categoryList = computed(() => {
+                    const counts = {};
+                    data.value.tours.forEach(tour => {
+                        const type = tour.cityTourType;
+                        if (type) {
+                            counts[type] = (counts[type] || 0) + 1;
+                        }
+                    });
+
+                    return Object.keys(counts).sort().map(name => ({
+                        name: name,
+                        count: counts[name]
+                    }));
                 });
 
                 const lastSyncShort = computed(() => {
@@ -397,9 +411,7 @@
 
                 const startUAEDataCrawl = async () => {
                     if (!apiKey.value) { error.value = "Missing API Token."; return; }
-                    
                     localStorage.setItem(AUTH_KEY, JSON.stringify({ token: apiKey.value, type: authHeaderType.value }));
-                    
                     isCrawling.value = true;
                     error.value = null;
                     const newData = { countries: [{ countryId: UAE_COUNTRY_ID, countryName: 'UAE' }], cities: [], tours: [], options: [] };
@@ -446,7 +458,7 @@
                                                 tourOptionId: opt.tourOptionId, 
                                                 optionName: opt.optionName, 
                                                 tourId: tour.tourId,
-                                                cityTourType: tour.cityTourType // Ensure parameter is saved
+                                                cityTourType: tour.cityTourType
                                             });
                                         }
                                     });
@@ -466,12 +478,9 @@
                 const filteredResults = computed(() => {
                     const s = searchTerm.value.toLowerCase().trim();
                     const cat = selectedCategory.value;
-
                     if (!s && cat === 'All Categories') return [];
-
                     const results = [];
 
-                    // Filter Cities (Only if 'All Categories' is selected)
                     if (cat === 'All Categories' && s) {
                         data.value.cities.forEach(c => {
                             if (c.cityName?.toLowerCase().includes(s) || String(c.cityId) === s) {
@@ -480,14 +489,11 @@
                         });
                     }
 
-                    // Filter Tours based on cityTourType
                     data.value.tours.forEach(t => {
                         const matchesCategory = cat === 'All Categories' || t.cityTourType === cat;
-                        
                         if (matchesCategory) {
                             const matchesSearch = !s || t.tourName?.toLowerCase().includes(s) || String(t.tourId) === s;
                             const tourOptions = data.value.options.filter(o => o.tourId === t.tourId);
-                            
                             const matchedOptions = tourOptions.filter(o => 
                                 matchesSearch || (!s ? true : (o.optionName?.toLowerCase().includes(s) || String(o.tourOptionId) === s))
                             ).map(o => ({ 
@@ -503,13 +509,12 @@
                                     id: t.tourId, 
                                     sub: t.cityName, 
                                     meta: t.tourType, 
-                                    subMeta: t.cityTourType, // Visual feedback for the filtered param
+                                    subMeta: t.cityTourType,
                                     nestedOptions: matchedOptions 
                                 });
                             }
                         }
                     });
-                    
                     return results;
                 });
 
@@ -520,7 +525,7 @@
                 }[type]);
 
                 return {
-                    apiKey, authHeaderType, searchTerm, selectedCategory, categories, isCrawling, error, progress, data, 
+                    apiKey, authHeaderType, searchTerm, selectedCategory, categoryList, isCrawling, error, progress, data, 
                     startUAEDataCrawl, filteredResults, successMsg, lastSync, lastSyncShort,
                     iconBgClass, copyId, highlightText
                 };
