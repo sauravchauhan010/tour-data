@@ -153,6 +153,23 @@
                         </div>
                     </div>
 
+                    <!-- City / Location Filter -->
+                    <div class="w-full lg:w-[320px] relative">
+                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">City / Location</label>
+                        <select
+                            v-model="selectedCity"
+                            class="w-full p-3 pl-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-rose-400 outline-none transition-all bg-gray-50/50 text-xs sm:text-sm font-bold appearance-none cursor-pointer pr-12"
+                        >
+                            <option value="All Cities">All Cities ({{ data.cities.length }})</option>
+                            <option v-for="c in cityList" :key="c.name" :value="c.name">
+                                {{ c.name }} ({{ c.count }})
+                            </option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-rose-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </div>
+                    </div>
+
                     <div class="hidden lg:block w-px h-10 bg-gray-100"></div>
 
                     <div class="w-full lg:w-auto grid grid-cols-2 sm:grid-cols-4 gap-4 flex-shrink-0">
@@ -215,7 +232,7 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4">
-                                        <div class="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors" v-html="highlightText(res.label)"></div>
+                                        <div class="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors" :class="{ 'text-gray-400 italic': res.noStaticData }" v-html="highlightText(res.label)"></div>
                                         <div v-if="res.meta" class="text-[9px] font-bold text-gray-400 uppercase mt-0.5 tracking-tight">
                                             {{ res.meta }}
                                         </div>
@@ -308,7 +325,8 @@
                 const authHeaderType = ref('Bearer');
                 const baseUrl = 'https://activities.raynatours.com';
                 const searchTerm = ref('');
-                const selectedCategory = ref('All Categories'); 
+                const selectedCategory = ref('All Categories');
+                const selectedCity = ref('All Cities');
                 
                 const isCrawling = ref(false);
                 const error = ref(null);
@@ -350,6 +368,15 @@
                         name: name,
                         count: counts[name]
                     }));
+                });
+
+                const cityList = computed(() => {
+                    const counts = {};
+                    data.value.tours.forEach(tour => {
+                        const city = tour.cityName;
+                        if (city) counts[city] = (counts[city] || 0) + 1;
+                    });
+                    return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
                 });
 
                 const lastSyncShort = computed(() => {
@@ -415,55 +442,142 @@
                     isCrawling.value = true;
                     error.value = null;
                     const newData = { countries: [{ countryId: UAE_COUNTRY_ID, countryName: 'UAE' }], cities: [], tours: [], options: [] };
-                    const seenTourIds = new Set();
+                    const seenTourKeys = new Set();
                     const seenOptionIds = new Set();
+                    const travelDate = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
 
                     try {
-                        progress.value = { current: 0, total: 1, label: 'Initializing', subLabel: 'Validating Region...' };
+                        // Step 1: Fetch cities
+                        progress.value = { current: 0, total: 1, label: 'Initializing', subLabel: 'Fetching Cities...' };
                         const cityRes = await fetchWithRetry('/api/Tour/cities', { CountryId: UAE_COUNTRY_ID });
                         if (cityRes.statuscode != 200) throw new Error(cityRes.error || "Access Denied");
-                        
                         newData.cities = cityRes.result ? cityRes.result.map(c => ({ ...c, countryId: UAE_COUNTRY_ID })) : [];
-                        
-                        progress.value = { current: 0, total: newData.cities.length, label: 'Fetching Tours', subLabel: 'Gathering Region Data' };
+
+                        // Step 2: Fetch tour IDs from tourlist (per city)
+                        progress.value = { current: 0, total: newData.cities.length, label: 'Fetching Tour List', subLabel: 'Getting Tour IDs per city...' };
+                        const cityTourMap = {}; // cityId -> [{ tourId, contractId, ...pricing }]
                         for (let i = 0; i < newData.cities.length; i++) {
                             const city = newData.cities[i];
-                            progress.value.subLabel = `Scanning ${city.cityName}...`;
-                            const tourRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId: UAE_COUNTRY_ID, cityId: city.cityId });
-                            if (tourRes.result) {
-                                tourRes.result.forEach(t => {
-                                    if (!seenTourIds.has(t.tourId)) {
-                                        seenTourIds.add(t.tourId);
-                                        newData.tours.push({ ...t, cityName: city.cityName });
-                                    }
-                                });
-                            }
+                            progress.value.subLabel = `Tour list for ${city.cityName}...`;
+                            try {
+                                const listRes = await fetchWithRetry('/api/Tour/tourlist', { countryId: UAE_COUNTRY_ID, cityId: city.cityId, travelDate });
+                                if (listRes.result && Array.isArray(listRes.result)) {
+                                    cityTourMap[city.cityId] = listRes.result;
+                                }
+                            } catch(e) { /* skip city on error */ }
                             progress.value.current = i + 1;
                             await sleep(50);
                         }
 
-                        progress.value = { current: 0, total: newData.tours.length, label: 'Finalizing', subLabel: 'Linking Service Options' };
+                        // Step 3: Fetch static data per city and merge with tourlist pricing
+                        const allCityIds = Object.keys(cityTourMap).map(Number);
+                        progress.value = { current: 0, total: allCityIds.length, label: 'Fetching Tour Details', subLabel: 'Getting static data per city...' };
+                        for (let i = 0; i < allCityIds.length; i++) {
+                            const cityId = allCityIds[i];
+                            const city = newData.cities.find(c => c.cityId === cityId);
+                            const pricingList = cityTourMap[cityId];
+
+                            progress.value.subLabel = `Static data for ${city?.cityName || cityId}...`;
+                            try {
+                                const staticRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId: UAE_COUNTRY_ID, cityId });
+                                const staticMap = {};
+                                if (staticRes.result && Array.isArray(staticRes.result)) {
+                                    staticRes.result.forEach(t => staticMap[t.tourId] = t);
+                                }
+
+                                // Iterate tourlist IDs — source of truth
+                                pricingList.forEach(p => {
+                                    const uniqueKey = `${p.tourId}-${cityId}`;
+                                    if (seenTourKeys.has(uniqueKey)) return;
+                                    seenTourKeys.add(uniqueKey);
+
+                                    const staticData = staticMap[p.tourId];
+                                    if (staticData) {
+                                        // Full data — merge static + pricing
+                                        newData.tours.push({
+                                            ...staticData,
+                                            contractId: p.contractId,
+                                            amount: p.amount,
+                                            discount: p.discount,
+                                        });
+                                    } else {
+                                        // No static data — push pricing only with fallback fields
+                                        newData.tours.push({
+                                            tourId: p.tourId,
+                                            contractId: p.contractId,
+                                            amount: p.amount,
+                                            discount: p.discount,
+                                            cityId: cityId,
+                                            cityName: city?.cityName || '',
+                                            tourName: 'No static data found',
+                                            cityTourType: '',
+                                            noStaticData: true,
+                                        });
+                                    }
+                                });
+                            } catch(e) { /* skip city on error */ }
+                            progress.value.current = i + 1;
+                            await sleep(50);
+                        }
+
+                        // Step 4: Fetch tourStaticDataById for tours missing static data
+                        const noStaticTours = newData.tours.filter(t => t.noStaticData);
+                        if (noStaticTours.length > 0) {
+                            progress.value = { current: 0, total: noStaticTours.length, label: 'Resolving Missing Data', subLabel: 'Fetching by Tour ID...' };
+                            for (let i = 0; i < noStaticTours.length; i++) {
+                                const tour = noStaticTours[i];
+                                progress.value.subLabel = `Fetching tour ID ${tour.tourId}...`;
+                                try {
+                                    const byIdRes = await fetchWithRetry('/api/Tour/tourStaticDataById', {
+                                        countryId: UAE_COUNTRY_ID,
+                                        cityId: tour.cityId,
+                                        tourId: tour.tourId,
+                                        contractId: tour.contractId,
+                                        travelDate
+                                    });
+                                    if (byIdRes.result && byIdRes.result.length > 0) {
+                                        const staticData = byIdRes.result[0];
+                                        // Replace the placeholder entry in newData.tours
+                                        const idx = newData.tours.findIndex(t => t.tourId === tour.tourId && t.cityId === tour.cityId && t.noStaticData);
+                                        if (idx !== -1) {
+                                            newData.tours[idx] = {
+                                                ...staticData,
+                                                contractId: tour.contractId,
+                                                amount: tour.amount,
+                                                discount: tour.discount,
+                                            };
+                                        }
+                                    }
+                                } catch(e) { /* keep as noStaticData if fails */ }
+                                progress.value.current = i + 1;
+                                if (i % 10 === 0) await sleep(50);
+                            }
+                        }
+
+                        // Step 5: Fetch tour options per tour
+                        progress.value = { current: 0, total: newData.tours.length, label: 'Finalizing', subLabel: 'Linking Service Options...' };
                         for (let i = 0; i < newData.tours.length; i++) {
                             const tour = newData.tours[i];
-                            const optRes = await fetchWithRetry('/api/Tour/touroptionstaticdata', { tourId: tour.tourId, contractId: tour.contractId });
-                            
-                            if (optRes.result) {
-                                const list = optRes.result.touroption || optRes.result.touroptions || (Array.isArray(optRes.result) ? optRes.result : []);
-                                if (Array.isArray(list)) {
-                                    list.forEach(opt => {
-                                        const uniqueKey = `${tour.tourId}-${opt.tourOptionId}`;
-                                        if (!seenOptionIds.has(uniqueKey)) {
-                                            seenOptionIds.add(uniqueKey);
-                                            newData.options.push({ 
-                                                tourOptionId: opt.tourOptionId, 
-                                                optionName: opt.optionName, 
-                                                tourId: tour.tourId,
-                                                cityTourType: tour.cityTourType
-                                            });
-                                        }
-                                    });
+                            try {
+                                const optRes = await fetchWithRetry('/api/Tour/touroptionstaticdata', { tourId: tour.tourId, contractId: tour.contractId });
+                                if (optRes.result) {
+                                    const list = optRes.result.touroption || optRes.result.touroptions || (Array.isArray(optRes.result) ? optRes.result : []);
+                                    if (Array.isArray(list)) {
+                                        list.forEach(opt => {
+                                            const uniqueKey = `${tour.tourId}-${opt.tourOptionId}`;
+                                            if (!seenOptionIds.has(uniqueKey)) {
+                                                seenOptionIds.add(uniqueKey);
+                                                newData.options.push({
+                                                    tourOptionId: opt.tourOptionId,
+                                                    optionName: opt.optionName,
+                                                    tourId: tour.tourId,
+                                                    cityTourType: tour.cityTourType
+                                                });
+                                            }
+                                        });
+                                    }
                                 }
-                            }
+                            } catch(e) { /* skip tour on error */ }
                             progress.value.current = i + 1;
                             if (i % 10 === 0) await sleep(50);
                         }
@@ -478,7 +592,8 @@
                 const filteredResults = computed(() => {
                     const s = searchTerm.value.toLowerCase().trim();
                     const cat = selectedCategory.value;
-                    if (!s && cat === 'All Categories') return [];
+                    const city = selectedCity.value;
+                    if (!s && cat === 'All Categories' && city === 'All Cities') return [];
                     const results = [];
 
                     if (cat === 'All Categories' && s) {
@@ -491,7 +606,8 @@
 
                     data.value.tours.forEach(t => {
                         const matchesCategory = cat === 'All Categories' || t.cityTourType === cat;
-                        if (matchesCategory) {
+                        const matchesCity = city === 'All Cities' || t.cityName === city;
+                        if (matchesCategory && matchesCity) {
                             const matchesSearch = !s || t.tourName?.toLowerCase().includes(s) || String(t.tourId) === s;
                             const tourOptions = data.value.options.filter(o => o.tourId === t.tourId);
                             const matchedOptions = tourOptions.filter(o => 
@@ -510,6 +626,7 @@
                                     sub: t.cityName, 
                                     meta: t.tourType, 
                                     subMeta: t.cityTourType,
+                                    noStaticData: t.noStaticData || false,
                                     nestedOptions: matchedOptions 
                                 });
                             }
@@ -525,7 +642,7 @@
                 }[type]);
 
                 return {
-                    apiKey, authHeaderType, searchTerm, selectedCategory, categoryList, isCrawling, error, progress, data, 
+                    apiKey, authHeaderType, searchTerm, selectedCategory, selectedCity, categoryList, cityList, isCrawling, error, progress, data, 
                     startUAEDataCrawl, filteredResults, successMsg, lastSync, lastSyncShort,
                     iconBgClass, copyId, highlightText
                 };
