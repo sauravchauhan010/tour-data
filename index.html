@@ -397,19 +397,13 @@
 
                 const categoryList = computed(() => {
                     const counts = {};
-                    data.value.tours.forEach(tour => {
-                        const type = tour.cityTourType || tour.city_tour_type;
-                        if (type) counts[type] = (counts[type] || 0) + 1;
-                    });
+                    normalizedTours.value.forEach(t => { if (t.cityTourType) counts[t.cityTourType] = (counts[t.cityTourType] || 0) + 1; });
                     return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
                 });
 
                 const cityList = computed(() => {
                     const counts = {};
-                    data.value.tours.forEach(tour => {
-                        const city = tour.cityName || tour.city_name;
-                        if (city) counts[city] = (counts[city] || 0) + 1;
-                    });
+                    normalizedTours.value.forEach(t => { if (t.cityName) counts[t.cityName] = (counts[t.cityName] || 0) + 1; });
                     return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
                 });
 
@@ -666,55 +660,85 @@
                     } catch (err) { error.value = err.message; } finally { isCrawling.value = false; }
                 };
 
+                // Pre-built indexes for fast lookup — rebuilt only when data changes
+                const optionsByTourId = ref({});
+                const normalizedTours = ref([]);
+                const normalizedCities = ref([]);
+
+                const buildIndexes = () => {
+                    // Normalize all tours to consistent shape once
+                    normalizedTours.value = data.value.tours.map(t => ({
+                        tourId:      t.tour_id       || t.tourId,
+                        tourName:    (t.tour_name    || t.tourName    || '').toLowerCase(),
+                        tourNameRaw: t.tour_name     || t.tourName    || '',
+                        cityName:    t.city_name     || t.cityName    || '',
+                        cityTourType:t.city_tour_type|| t.cityTourType|| '',
+                        noStaticData:t.no_static_data|| t.noStaticData|| false,
+                    }));
+
+                    normalizedCities.value = data.value.cities.map(c => ({
+                        cityId:   c.city_id   || c.cityId,
+                        cityName: c.city_name || c.cityName || '',
+                    }));
+
+                    // Options grouped by tourId for O(1) lookup
+                    const map = {};
+                    data.value.options.forEach(o => {
+                        const tid = String(o.tour_id || o.tourId);
+                        if (!map[tid]) map[tid] = [];
+                        map[tid].push({
+                            id:      o.tour_option_id || o.tourOptionId,
+                            label:   o.option_name   || o.optionName   || '',
+                            labelLC:(o.option_name   || o.optionName   || '').toLowerCase(),
+                            subType: o.city_tour_type|| o.cityTourType || '',
+                        });
+                    });
+                    optionsByTourId.value = map;
+                };
+
+                watch(() => data.value.tours.length, buildIndexes);
+                watch(() => data.value.options.length, buildIndexes);
+
                 const filteredResults = computed(() => {
-                    const s = debouncedSearch.value.toLowerCase().trim();
-                    const cat = selectedCategory.value;
+                    const s    = debouncedSearch.value.toLowerCase().trim();
+                    const cat  = selectedCategory.value;
                     const city = selectedCity.value;
                     if (!s && cat === 'All Categories' && city === 'All Cities') return [];
+
                     const results = [];
+                    const allCats = cat === 'All Categories';
+                    const allCities = city === 'All Cities';
 
-                    // Helper: support both camelCase (fresh crawl) and snake_case (from Supabase)
-                    const tName  = t => t.tourName   || t.tour_name   || '';
-                    const tId    = t => t.tourId     || t.tour_id;
-                    const tCity  = t => t.cityName   || t.city_name   || '';
-                    const tType  = t => t.cityTourType || t.city_tour_type || '';
-                    const tNSD   = t => t.noStaticData || t.no_static_data || false;
-                    const oId    = o => o.tourOptionId || o.tour_option_id;
-                    const oTid   = o => o.tourId     || o.tour_id;
-                    const oName  = o => o.optionName || o.option_name  || '';
-                    const oType  = o => o.cityTourType || o.city_tour_type || '';
-                    const cName  = c => c.cityName   || c.city_name   || '';
-                    const cId    = c => c.cityId     || c.city_id;
-
-                    if (cat === 'All Categories' && s) {
-                        data.value.cities.forEach(c => {
-                            if (cName(c).toLowerCase().includes(s) || String(cId(c)) === s) {
-                                results.push({ type: 'City', label: cName(c), id: cId(c), sub: 'United Arab Emirates' });
+                    // City results
+                    if (allCats && s) {
+                        normalizedCities.value.forEach(c => {
+                            if (c.cityName.toLowerCase().includes(s) || String(c.cityId) === s) {
+                                results.push({ type: 'City', label: c.cityName, id: c.cityId, sub: 'United Arab Emirates' });
                             }
                         });
                     }
 
-                    data.value.tours.forEach(t => {
-                        const matchesCategory = cat === 'All Categories' || tType(t) === cat;
-                        const matchesCity = city === 'All Cities' || tCity(t) === city;
-                        if (matchesCategory && matchesCity) {
-                            const matchesSearch = !s || tName(t).toLowerCase().includes(s) || String(tId(t)) === s;
-                            const tourOptions = data.value.options.filter(o => String(oTid(o)) === String(tId(t)));
-                            const matchedOptions = tourOptions.filter(o =>
-                                matchesSearch || (!s ? true : (oName(o).toLowerCase().includes(s) || String(oId(o)) === s))
-                            ).map(o => ({ id: oId(o), label: oName(o), subType: oType(o) }));
+                    // Tour results — all comparisons on pre-normalized strings
+                    normalizedTours.value.forEach(t => {
+                        if (!allCats  && t.cityTourType !== cat)  return;
+                        if (!allCities && t.cityName    !== city) return;
 
-                            if (matchesSearch || matchedOptions.length > 0) {
-                                results.push({
-                                    type: 'Tour',
-                                    label: tName(t),
-                                    id: tId(t),
-                                    sub: tCity(t),
-                                    subMeta: tType(t),
-                                    noStaticData: tNSD(t),
-                                    nestedOptions: matchedOptions
-                                });
-                            }
+                        const matchesSearch = !s || t.tourName.includes(s) || String(t.tourId) === s;
+                        const options = optionsByTourId.value[String(t.tourId)] || [];
+                        const matchedOptions = s
+                            ? options.filter(o => matchesSearch || o.labelLC.includes(s) || String(o.id) === s)
+                            : (matchesSearch ? options : []);
+
+                        if (matchesSearch || matchedOptions.length > 0) {
+                            results.push({
+                                type: 'Tour',
+                                label: t.tourNameRaw,
+                                id: t.tourId,
+                                sub: t.cityName,
+                                subMeta: t.cityTourType,
+                                noStaticData: t.noStaticData,
+                                nestedOptions: matchedOptions,
+                            });
                         }
                     });
                     return results;
