@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -79,6 +81,12 @@
     <div id="app" v-cloak class="flex-grow p-4 lg:p-6">
         <div class="max-w-[1600px] mx-auto">
             
+                <!-- Loading overlay -->
+                <div v-if="isLoading" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3">
+                    <svg class="animate-spin w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                    <span class="text-sm font-bold text-gray-600">Loading from Supabase...</span>
+                </div>
+
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
                 <div class="flex-shrink-0">
@@ -111,11 +119,21 @@
                     <div class="flex gap-2 w-full sm:w-auto">
                         <button 
                             @click="startUAEDataCrawl"
-                            :disabled="isCrawling"
+                            :disabled="isCrawling || isLoading"
                             class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-xl font-bold text-xs hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[100px]"
                         >
                             <svg v-if="isCrawling" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                             {{ isCrawling ? 'Syncing...' : 'Sync Data' }}
+                        </button>
+                        <button
+                            @click="loadFromSupabase"
+                            :disabled="isCrawling || isLoading"
+                            title="Reload from Supabase"
+                            class="px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
+                        >
+                            <svg v-if="isLoading" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                            {{ isLoading ? 'Loading...' : 'Refresh' }}
                         </button>
                     </div>
                 </div>
@@ -315,6 +333,10 @@
     <script>
         const { createApp, ref, computed, onMounted } = Vue;
 
+        const SUPABASE_URL = 'https://euelfvzjmvmpnohtnebl.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_IhdSKmk48WGIWjBnps2W0A_ZNfqbzzR';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         createApp({
             setup() {
                 const UAE_COUNTRY_ID = 13063;
@@ -335,7 +357,26 @@
                 const progress = ref({ current: 0, total: 0, label: '', subLabel: '' });
                 const data = ref({ countries: [{ countryId: 13063, countryName: 'UAE' }], cities: [], tours: [], options: [] });
 
-                onMounted(() => {
+                const isLoading = ref(false);
+
+                const loadFromSupabase = async () => {
+                    isLoading.value = true;
+                    try {
+                        const [citiesRes, toursRes, optionsRes, syncRes] = await Promise.all([
+                            supabase.from('rayna_cities').select('*'),
+                            supabase.from('rayna_tours').select('*'),
+                            supabase.from('rayna_options').select('*'),
+                            supabase.from('rayna_sync').select('*').order('synced_at', { ascending: false }).limit(1)
+                        ]);
+                        if (citiesRes.data) data.value.cities = citiesRes.data;
+                        if (toursRes.data) data.value.tours = toursRes.data;
+                        if (optionsRes.data) data.value.options = optionsRes.data;
+                        if (syncRes.data && syncRes.data.length > 0) lastSync.value = new Date(syncRes.data[0].synced_at).toLocaleString();
+                    } catch(e) { error.value = 'Failed to load from Supabase: ' + e.message; }
+                    finally { isLoading.value = false; }
+                };
+
+                onMounted(async () => {
                     const savedAuth = localStorage.getItem(AUTH_KEY);
                     if (savedAuth) {
                         try {
@@ -344,36 +385,22 @@
                             authHeaderType.value = parsed.type || 'Bearer';
                         } catch(e) {}
                     }
-
-                    const savedData = localStorage.getItem(STORAGE_KEY);
-                    if (savedData) {
-                        try {
-                            const parsed = JSON.parse(savedData);
-                            data.value = parsed.payload;
-                            lastSync.value = parsed.timestamp;
-                        } catch(e) {}
-                    }
+                    await loadFromSupabase();
                 });
 
                 const categoryList = computed(() => {
                     const counts = {};
                     data.value.tours.forEach(tour => {
-                        const type = tour.cityTourType;
-                        if (type) {
-                            counts[type] = (counts[type] || 0) + 1;
-                        }
+                        const type = tour.cityTourType || tour.city_tour_type;
+                        if (type) counts[type] = (counts[type] || 0) + 1;
                     });
-
-                    return Object.keys(counts).sort().map(name => ({
-                        name: name,
-                        count: counts[name]
-                    }));
+                    return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
                 });
 
                 const cityList = computed(() => {
                     const counts = {};
                     data.value.tours.forEach(tour => {
-                        const city = tour.cityName;
+                        const city = tour.cityName || tour.city_name;
                         if (city) counts[city] = (counts[city] || 0) + 1;
                     });
                     return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
@@ -584,7 +611,50 @@
 
                         data.value = newData;
                         lastSync.value = new Date().toLocaleString();
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify({ timestamp: lastSync.value, payload: newData }));
+
+                        // Save to Supabase in batches
+                        progress.value = { current: 0, total: 4, label: 'Saving to Supabase', subLabel: 'Uploading cities...' };
+                        const BATCH = 500;
+
+                        // Cities
+                        const cityRows = newData.cities.map(c => ({ city_id: c.cityId, city_name: c.cityName, country_id: c.countryId || UAE_COUNTRY_ID }));
+                        for (let i = 0; i < cityRows.length; i += BATCH) {
+                            await supabase.from('rayna_cities').upsert(cityRows.slice(i, i + BATCH), { onConflict: 'city_id' });
+                        }
+                        progress.value.current = 1; progress.value.subLabel = 'Uploading tours...';
+
+                        // Tours
+                        const tourRows = newData.tours.map(t => ({
+                            tour_id: t.tourId, city_id: t.cityId, city_name: t.cityName,
+                            contract_id: t.contractId, amount: t.amount, discount: t.discount,
+                            tour_name: t.tourName || null, city_tour_type: t.cityTourType || null,
+                            city_tour_type_id: t.cityTourTypeId || null, duration: t.duration || null,
+                            rating: t.rating || null, review_count: t.reviewCount || null,
+                            image_path: t.imagePath || null, cancellation_policy: t.cancellationPolicyName || null,
+                            is_slot: t.isSlot || false, is_seat: t.isSeat || false,
+                            no_static_data: t.noStaticData || false,
+                        }));
+                        for (let i = 0; i < tourRows.length; i += BATCH) {
+                            await supabase.from('rayna_tours').upsert(tourRows.slice(i, i + BATCH), { onConflict: 'tour_id,city_id' });
+                        }
+                        progress.value.current = 2; progress.value.subLabel = 'Uploading options...';
+
+                        // Options
+                        const optRows = newData.options.map(o => ({
+                            tour_option_id: o.tourOptionId, tour_id: o.tourId,
+                            option_name: o.optionName || null, city_tour_type: o.cityTourType || null
+                        }));
+                        for (let i = 0; i < optRows.length; i += BATCH) {
+                            await supabase.from('rayna_options').upsert(optRows.slice(i, i + BATCH), { onConflict: 'tour_option_id,tour_id' });
+                        }
+                        progress.value.current = 3; progress.value.subLabel = 'Saving sync log...';
+
+                        // Sync log
+                        await supabase.from('rayna_sync').insert({ synced_at: new Date().toISOString(), tour_count: newData.tours.length, option_count: newData.options.length, city_count: newData.cities.length });
+                        progress.value.current = 4;
+
+                        // Keep auth in localStorage only
+                        localStorage.removeItem(STORAGE_KEY);
                         showSuccess("Database Synced Successfully!");
                     } catch (err) { error.value = err.message; } finally { isCrawling.value = false; }
                 };
@@ -596,38 +666,46 @@
                     if (!s && cat === 'All Categories' && city === 'All Cities') return [];
                     const results = [];
 
+                    // Helper: support both camelCase (fresh crawl) and snake_case (from Supabase)
+                    const tName  = t => t.tourName   || t.tour_name   || '';
+                    const tId    = t => t.tourId     || t.tour_id;
+                    const tCity  = t => t.cityName   || t.city_name   || '';
+                    const tType  = t => t.cityTourType || t.city_tour_type || '';
+                    const tNSD   = t => t.noStaticData || t.no_static_data || false;
+                    const oId    = o => o.tourOptionId || o.tour_option_id;
+                    const oTid   = o => o.tourId     || o.tour_id;
+                    const oName  = o => o.optionName || o.option_name  || '';
+                    const oType  = o => o.cityTourType || o.city_tour_type || '';
+                    const cName  = c => c.cityName   || c.city_name   || '';
+                    const cId    = c => c.cityId     || c.city_id;
+
                     if (cat === 'All Categories' && s) {
                         data.value.cities.forEach(c => {
-                            if (c.cityName?.toLowerCase().includes(s) || String(c.cityId) === s) {
-                                results.push({ type: 'City', label: c.cityName, id: c.cityId, sub: 'United Arab Emirates' });
+                            if (cName(c).toLowerCase().includes(s) || String(cId(c)) === s) {
+                                results.push({ type: 'City', label: cName(c), id: cId(c), sub: 'United Arab Emirates' });
                             }
                         });
                     }
 
                     data.value.tours.forEach(t => {
-                        const matchesCategory = cat === 'All Categories' || t.cityTourType === cat;
-                        const matchesCity = city === 'All Cities' || t.cityName === city;
+                        const matchesCategory = cat === 'All Categories' || tType(t) === cat;
+                        const matchesCity = city === 'All Cities' || tCity(t) === city;
                         if (matchesCategory && matchesCity) {
-                            const matchesSearch = !s || t.tourName?.toLowerCase().includes(s) || String(t.tourId) === s;
-                            const tourOptions = data.value.options.filter(o => o.tourId === t.tourId);
-                            const matchedOptions = tourOptions.filter(o => 
-                                matchesSearch || (!s ? true : (o.optionName?.toLowerCase().includes(s) || String(o.tourOptionId) === s))
-                            ).map(o => ({ 
-                                id: o.tourOptionId, 
-                                label: o.optionName, 
-                                subType: o.cityTourType 
-                            }));
+                            const matchesSearch = !s || tName(t).toLowerCase().includes(s) || String(tId(t)) === s;
+                            const tourOptions = data.value.options.filter(o => String(oTid(o)) === String(tId(t)));
+                            const matchedOptions = tourOptions.filter(o =>
+                                matchesSearch || (!s ? true : (oName(o).toLowerCase().includes(s) || String(oId(o)) === s))
+                            ).map(o => ({ id: oId(o), label: oName(o), subType: oType(o) }));
 
                             if (matchesSearch || matchedOptions.length > 0) {
-                                results.push({ 
-                                    type: 'Tour', 
-                                    label: t.tourName, 
-                                    id: t.tourId, 
-                                    sub: t.cityName, 
-                                    meta: t.tourType, 
-                                    subMeta: t.cityTourType,
-                                    noStaticData: t.noStaticData || false,
-                                    nestedOptions: matchedOptions 
+                                results.push({
+                                    type: 'Tour',
+                                    label: tName(t),
+                                    id: tId(t),
+                                    sub: tCity(t),
+                                    subMeta: tType(t),
+                                    noStaticData: tNSD(t),
+                                    nestedOptions: matchedOptions
                                 });
                             }
                         }
@@ -642,8 +720,8 @@
                 }[type]);
 
                 return {
-                    apiKey, authHeaderType, searchTerm, selectedCategory, selectedCity, categoryList, cityList, isCrawling, error, progress, data, 
-                    startUAEDataCrawl, filteredResults, successMsg, lastSync, lastSyncShort,
+                    apiKey, authHeaderType, searchTerm, selectedCategory, selectedCity, categoryList, cityList, isCrawling, isLoading, error, progress, data, 
+                    startUAEDataCrawl, loadFromSupabase, filteredResults, successMsg, lastSync, lastSyncShort,
                     iconBgClass, copyId, highlightText
                 };
             }
