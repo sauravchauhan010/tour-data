@@ -331,7 +331,7 @@
     </footer>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, computed, onMounted, watch } = Vue;
 
         const SUPABASE_URL = 'https://euelfvzjmvmpnohtnebl.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_IhdSKmk48WGIWjBnps2W0A_ZNfqbzzR';
@@ -348,6 +348,12 @@
                 const authHeaderType = ref('Bearer');
                 const baseUrl = 'https://activities.raynatours.com';
                 const searchTerm = ref('');
+                const debouncedSearch = ref('');
+                let debounceTimer = null;
+                watch(searchTerm, (val) => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => { debouncedSearch.value = val; }, 300);
+                });
                 const selectedCategory = ref('All Categories');
                 const selectedCity = ref('All Cities');
                 
@@ -661,7 +667,7 @@
                 };
 
                 const filteredResults = computed(() => {
-                    const s = searchTerm.value.toLowerCase().trim();
+                    const s = debouncedSearch.value.toLowerCase().trim();
                     const cat = selectedCategory.value;
                     const city = selectedCity.value;
                     if (!s && cat === 'All Categories' && city === 'All Cities') return [];
