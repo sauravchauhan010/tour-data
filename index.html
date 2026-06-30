@@ -552,7 +552,8 @@
                                 apiKeys.value.live = parsed.token || '';
                                 authHeaderTypes.value.live = parsed.type || 'Bearer';
                             }
-                            environment.value = parsed.env || 'live';
+                            // Always default to Live on load; don't restore last-used tab
+                                  environment.value = 'live';
                         } catch(e) {}
                     }
                     if (isAuthenticated.value) await loadFromSupabase();
