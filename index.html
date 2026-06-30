@@ -6,7 +6,7 @@
     <title>Tour Information - Rayna Tours</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Vue 3 CDN -->
+    <!-- Vue 3 CDN -->    
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
@@ -135,16 +135,35 @@
                 </h1>
 
                 <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                    <!-- Live / Sandbox Slider Toggle -->
+                    <div class="relative w-full sm:w-44">
+                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Environment</label>
+                        <button
+                            type="button"
+                            @click="environment = environment === 'live' ? 'sandbox' : 'live'"
+                            :class="['relative w-full h-10 rounded-xl border shadow-sm transition-colors duration-300 flex items-center px-1', environment === 'live' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200']"
+                        >
+                            <!-- Sliding pill -->
+                            <span
+                                :class="['absolute top-1 bottom-1 w-1/2 rounded-lg shadow transition-transform duration-300 ease-out', environment === 'live' ? 'translate-x-0 bg-emerald-500' : 'translate-x-full bg-amber-500']"
+                            ></span>
+                            <!-- Labels -->
+                            <span class="relative z-10 w-1/2 text-center text-[11px] font-black tracking-tight" :class="environment === 'live' ? 'text-white' : 'text-emerald-700'">LIVE</span>
+                            <span class="relative z-10 w-1/2 text-center text-[11px] font-black tracking-tight" :class="environment === 'sandbox' ? 'text-white' : 'text-amber-700'">SANDBOX</span>
+                        </button>
+                    </div>
                     <div class="relative flex w-full sm:w-64 md:w-80">
-                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">API Token / Key</label>
+                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">
+                            {{ environment === 'live' ? '🟢 Live' : '🟡 Sandbox' }} API Token / Key
+                        </label>
                         <input
                             type="password"
-                            v-model="apiKey"
-                            placeholder="Enter Key..."
-                            class="w-full text-xs p-2 rounded-l-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+                            v-model="apiKeys[environment]"
+                            :placeholder="environment === 'live' ? 'Enter Live Key...' : 'Enter Sandbox Key...'"
+                            :class="['w-full text-xs p-2 rounded-l-xl border outline-none transition-all shadow-sm', environment === 'live' ? 'border-emerald-200 focus:ring-2 focus:ring-emerald-400' : 'border-amber-200 focus:ring-2 focus:ring-amber-400']"
                         />
                         <select 
-                            v-model="authHeaderType"
+                            v-model="authHeaderTypes[environment]"
                             class="bg-gray-50 border border-l-0 border-gray-200 px-2 text-[9px] font-bold text-gray-600 rounded-r-xl outline-none"
                         >
                             <option value="Bearer">Bearer</option>
@@ -155,7 +174,7 @@
                         <button 
                             @click="startUAEDataCrawl"
                             :disabled="isCrawling || isLoading"
-                            class="flex-1 px-4 py-2 bg-gray-900 text-white rounded-xl font-bold text-xs hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[100px]"
+                            :class="['flex-1 px-4 py-2 text-white rounded-xl font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[100px]', environment === 'live' ? 'bg-gray-900 hover:bg-black' : 'bg-amber-600 hover:bg-amber-700']"
                         >
                             <svg v-if="isCrawling" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                             {{ isCrawling ? 'Syncing...' : 'Sync Data' }}
@@ -202,6 +221,23 @@
                             </option>
                         </select>
                         <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- Country Filter -->
+                    <div class="w-full lg:w-[260px] relative">
+                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Country</label>
+                        <select
+                            v-model="selectedCountry"
+                            class="w-full p-3 pl-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-amber-400 outline-none transition-all bg-gray-50/50 text-xs sm:text-sm font-bold appearance-none cursor-pointer pr-12"
+                        >
+                            <option value="All Countries">All Countries</option>
+                            <option v-for="c in countryList" :key="c.id" :value="c.id">
+                                {{ c.name }} ({{ c.count }})
+                            </option>
+                        </select>
+                        <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                         </div>
                     </div>
@@ -373,6 +409,10 @@
         const { createClient } = window.supabase;
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        // Countries to crawl. Add/remove IDs here to change coverage.
+        const COUNTRY_IDS = [13063, 15474, 15399];
+        const COUNTRY_NAMES = { 13063: 'UAE', 15474: 'Singapore', 15399: 'India'  }; // update label once known
+
         createApp({
             setup() {
                 const AUTH_SESSION_KEY = 'rayna_auth_session';
@@ -408,13 +448,17 @@
                     }
                 };
 
-                const UAE_COUNTRY_ID = 13063;
                 const STORAGE_KEY = 'rayna_uae_data_v2';
                 const AUTH_KEY = 'rayna_explorer_auth';
 
-                const apiKey = ref('');
-                const authHeaderType = ref('Bearer');
-                const baseUrl = 'https://activities.raynatours.com';
+                const apiKeys = ref({ live: '', sandbox: '' });
+                const authHeaderTypes = ref({ live: 'Bearer', sandbox: 'Bearer' });
+                const environment = ref('live'); // 'live' | 'sandbox'
+                const ENV_URLS = {
+                    live: 'https://activities.raynatours.com',
+                    sandbox: 'https://sandbox.raynatours.com'
+                };
+                const baseUrl = computed(() => ENV_URLS[environment.value] || ENV_URLS.live);
                 const searchTerm = ref('');
                 const debouncedSearch = ref('');
                 let debounceTimer = null;
@@ -424,20 +468,33 @@
                 });
                 const selectedCategory = ref('All Categories');
                 const selectedCity = ref('All Cities');
+                const selectedCountry = ref('All Countries');
                 
                 const isCrawling = ref(false);
                 const error = ref(null);
                 const successMsg = ref(null);
-                const lastSync = ref(null);
                 const progress = ref({ current: 0, total: 0, label: '', subLabel: '' });
-                const data = ref({ countries: [{ countryId: 13063, countryName: 'UAE' }], cities: [], tours: [], options: [] });
+
+                // Separate in-memory store per environment so Live/Sandbox never overwrite each other
+                const makeEmptyEnvData = () => ({
+                    countries: COUNTRY_IDS.map(id => ({ countryId: id, countryName: COUNTRY_NAMES[id] || String(id) })),
+                    cities: [], tours: [], options: []
+                });
+                const dataStore = ref({ live: makeEmptyEnvData(), sandbox: makeEmptyEnvData() });
+                const lastSyncStore = ref({ live: null, sandbox: null });
+                const loadedEnvs = ref({ live: false, sandbox: false }); // whether we've fetched from Supabase at least once
+
+                // `data` and `lastSync` always reflect the CURRENTLY SELECTED tab/environment
+                const data = computed(() => dataStore.value[environment.value]);
+                const lastSync = computed(() => lastSyncStore.value[environment.value]);
 
                 const isLoading = ref(false);
 
-                const loadFromSupabase = async () => {
+                const loadFromSupabase = async (envOverride) => {
+                    const env = envOverride || environment.value;
                     isLoading.value = true;
                     try {
-                        // Paginate options to get all records past Supabase's 1000 row limit
+                        // Paginate to get all records past Supabase's 1000 row limit, filtered by environment
                         const fetchAll = async (table) => {
                             const PAGE = 1000;
                             let all = [];
@@ -446,6 +503,7 @@
                                 const { data: chunk, error } = await supabase
                                     .from(table)
                                     .select('*')
+                                    .eq('environment', env)
                                     .range(from, from + PAGE - 1);
                                 if (error) throw error;
                                 if (!chunk || chunk.length === 0) break;
@@ -456,27 +514,45 @@
                             return all;
                         };
 
-                        const [citiesRes, toursAll, optionsAll, syncRes] = await Promise.all([
-                            supabase.from('rayna_cities').select('*'),
+                        const [citiesAll, toursAll, optionsAll, syncRes] = await Promise.all([
+                            fetchAll('rayna_cities'),
                             fetchAll('rayna_tours'),
                             fetchAll('rayna_options'),
-                            supabase.from('rayna_sync').select('*').order('synced_at', { ascending: false }).limit(1)
+                            supabase.from('rayna_sync').select('*').eq('environment', env).order('synced_at', { ascending: false }).limit(1)
                         ]);
-                        if (citiesRes.data) data.value.cities = citiesRes.data;
-                        data.value.tours = toursAll;
-                        data.value.options = optionsAll;
-                        if (syncRes.data && syncRes.data.length > 0) lastSync.value = new Date(syncRes.data[0].synced_at).toLocaleString();
+                        dataStore.value[env].cities = citiesAll;
+                        dataStore.value[env].tours = toursAll;
+                        dataStore.value[env].options = optionsAll;
+                        if (syncRes.data && syncRes.data.length > 0) lastSyncStore.value[env] = new Date(syncRes.data[0].synced_at).toLocaleString();
+                        loadedEnvs.value[env] = true;
                     } catch(e) { error.value = 'Failed to load from Supabase: ' + e.message; }
                     finally { isLoading.value = false; }
                 };
+
+                // Switching the Live/Sandbox tab loads that environment's data the first time it's selected
+                watch(environment, async (newEnv) => {
+                    if (!loadedEnvs.value[newEnv] && isAuthenticated.value) {
+                        await loadFromSupabase(newEnv);
+                    }
+                });
 
                 onMounted(async () => {
                     const savedAuth = localStorage.getItem(AUTH_KEY);
                     if (savedAuth) {
                         try {
                             const parsed = JSON.parse(savedAuth);
-                            apiKey.value = parsed.token || '';
-                            authHeaderType.value = parsed.type || 'Bearer';
+                            if (parsed.live || parsed.sandbox) {
+                                // New per-environment format
+                                apiKeys.value.live = parsed.live?.token || '';
+                                authHeaderTypes.value.live = parsed.live?.type || 'Bearer';
+                                apiKeys.value.sandbox = parsed.sandbox?.token || '';
+                                authHeaderTypes.value.sandbox = parsed.sandbox?.type || 'Bearer';
+                            } else if (parsed.token) {
+                                // Backward compat with old single-token format — assume it was Live
+                                apiKeys.value.live = parsed.token || '';
+                                authHeaderTypes.value.live = parsed.type || 'Bearer';
+                            }
+                            environment.value = parsed.env || 'live';
                         } catch(e) {}
                     }
                     if (isAuthenticated.value) await loadFromSupabase();
@@ -490,8 +566,24 @@
 
                 const cityList = computed(() => {
                     const counts = {};
-                    normalizedTours.value.forEach(t => { if (t.cityName) counts[t.cityName] = (counts[t.cityName] || 0) + 1; });
+                    normalizedTours.value.forEach(t => {
+                        if (selectedCountry.value !== 'All Countries' && String(t.countryId) !== String(selectedCountry.value)) return;
+                        if (t.cityName) counts[t.cityName] = (counts[t.cityName] || 0) + 1;
+                    });
                     return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
+                });
+
+                const countryList = computed(() => {
+                    const counts = {};
+                    normalizedTours.value.forEach(t => {
+                        if (t.countryId == null) return;
+                        counts[t.countryId] = (counts[t.countryId] || 0) + 1;
+                    });
+                    return Object.keys(counts).map(id => ({
+                        id,
+                        name: COUNTRY_NAMES[id] || `Country ${id}`,
+                        count: counts[id]
+                    }));
                 });
 
                 const lastSyncShort = computed(() => {
@@ -528,14 +620,17 @@
 
                 const fetchWithRetry = async (endpoint, payload = null, method = 'POST', retries = 5) => {
                     let delay = 1000;
+                    const env = environment.value;
+                    const currentKey = apiKeys.value[env];
+                    const currentType = authHeaderTypes.value[env];
                     for (let i = 0; i < retries; i++) {
                         try {
-                            const url = `${baseUrl}${endpoint}`;
+                            const url = `${baseUrl.value}${endpoint}`;
                             const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-                            if (authHeaderType.value === 'Bearer') {
-                                headers['Authorization'] = `Bearer ${apiKey.value}`;
+                            if (currentType === 'Bearer') {
+                                headers['Authorization'] = `Bearer ${currentKey}`;
                             } else {
-                                headers[authHeaderType.value] = apiKey.value;
+                                headers[currentType] = currentKey;
                             }
                             const options = { method, headers };
                             if (payload && method !== 'GET') options.body = JSON.stringify(payload);
@@ -552,32 +647,56 @@
                 };
 
                 const startUAEDataCrawl = async () => {
-                    if (!apiKey.value) { error.value = "Missing API Token."; return; }
-                    localStorage.setItem(AUTH_KEY, JSON.stringify({ token: apiKey.value, type: authHeaderType.value }));
+                    const env = environment.value;
+                    if (!apiKeys.value[env]) { error.value = `Missing API Token for ${env === 'live' ? 'Live' : 'Sandbox'}.`; return; }
+                    localStorage.setItem(AUTH_KEY, JSON.stringify({
+                        live: { token: apiKeys.value.live, type: authHeaderTypes.value.live },
+                        sandbox: { token: apiKeys.value.sandbox, type: authHeaderTypes.value.sandbox },
+                        env
+                    }));
                     isCrawling.value = true;
                     error.value = null;
-                    const newData = { countries: [{ countryId: UAE_COUNTRY_ID, countryName: 'UAE' }], cities: [], tours: [], options: [] };
+                    const newData = {
+                        countries: COUNTRY_IDS.map(id => ({ countryId: id, countryName: COUNTRY_NAMES[id] || String(id) })),
+                        cities: [], tours: [], options: []
+                    };
                     const seenTourKeys = new Set();
                     const seenOptionIds = new Set();
                     const travelDate = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
 
                     try {
-                        // Step 1: Fetch cities
-                        progress.value = { current: 0, total: 1, label: 'Initializing', subLabel: 'Fetching Cities...' };
-                        const cityRes = await fetchWithRetry('/api/Tour/cities', { CountryId: UAE_COUNTRY_ID });
-                        if (cityRes.statuscode != 200) throw new Error(cityRes.error || "Access Denied");
-                        newData.cities = cityRes.result ? cityRes.result.map(c => ({ ...c, countryId: UAE_COUNTRY_ID })) : [];
+                        // Step 1: Fetch cities for every country
+                        progress.value = { current: 0, total: COUNTRY_IDS.length, label: 'Initializing', subLabel: 'Fetching Cities...' };
+                        for (let ci = 0; ci < COUNTRY_IDS.length; ci++) {
+                            const countryId = COUNTRY_IDS[ci];
+                            progress.value.subLabel = `Fetching cities for country ${countryId}...`;
+                            try {
+                                const cityRes = await fetchWithRetry('/api/Tour/cities', { CountryId: countryId });
+                                if (cityRes.statuscode != 200) {
+                                    error.value = `Warning: ${cityRes.error || 'Access Denied'} for country ${countryId}. Continuing with other countries.`;
+                                } else {
+                                    const cities = cityRes.result ? cityRes.result.map(c => ({ ...c, countryId })) : [];
+                                    newData.cities.push(...cities);
+                                }
+                            } catch (e) {
+                                error.value = `Warning: failed to fetch cities for country ${countryId} (${e.message}). Continuing.`;
+                            }
+                            progress.value.current = ci + 1;
+                        }
 
-                        // Step 2: Fetch tour IDs from tourlist (per city)
+                        if (newData.cities.length === 0) throw new Error('No cities fetched for any country. Aborting sync.');
+
+                        // Step 2: Fetch tour IDs from tourlist (per city, keyed by countryId_cityId)
                         progress.value = { current: 0, total: newData.cities.length, label: 'Fetching Tour List', subLabel: 'Getting Tour IDs per city...' };
-                        const cityTourMap = {}; // cityId -> [{ tourId, contractId, ...pricing }]
+                        const cityTourMap = {}; // "countryId_cityId" -> [{ tourId, contractId, ...pricing }]
                         for (let i = 0; i < newData.cities.length; i++) {
                             const city = newData.cities[i];
-                            progress.value.subLabel = `Tour list for ${city.cityName}...`;
+                            const key = `${city.countryId}_${city.cityId}`;
+                            progress.value.subLabel = `Tour list for ${city.cityName} (country ${city.countryId})...`;
                             try {
-                                const listRes = await fetchWithRetry('/api/Tour/tourlist', { countryId: UAE_COUNTRY_ID, cityId: city.cityId, travelDate });
+                                const listRes = await fetchWithRetry('/api/Tour/tourlist', { countryId: city.countryId, cityId: city.cityId, travelDate });
                                 if (listRes.result && Array.isArray(listRes.result)) {
-                                    cityTourMap[city.cityId] = listRes.result;
+                                    cityTourMap[key] = listRes.result;
                                 }
                             } catch(e) { /* skip city on error */ }
                             progress.value.current = i + 1;
@@ -585,16 +704,19 @@
                         }
 
                         // Step 3: Fetch static data per city and merge with tourlist pricing
-                        const allCityIds = Object.keys(cityTourMap).map(Number);
-                        progress.value = { current: 0, total: allCityIds.length, label: 'Fetching Tour Details', subLabel: 'Getting static data per city...' };
-                        for (let i = 0; i < allCityIds.length; i++) {
-                            const cityId = allCityIds[i];
-                            const city = newData.cities.find(c => c.cityId === cityId);
-                            const pricingList = cityTourMap[cityId];
+                        const allCityKeys = Object.keys(cityTourMap);
+                        progress.value = { current: 0, total: allCityKeys.length, label: 'Fetching Tour Details', subLabel: 'Getting static data per city...' };
+                        for (let i = 0; i < allCityKeys.length; i++) {
+                            const key = allCityKeys[i];
+                            const [countryIdStr, cityIdStr] = key.split('_');
+                            const countryId = Number(countryIdStr);
+                            const cityId = Number(cityIdStr);
+                            const city = newData.cities.find(c => c.cityId === cityId && c.countryId === countryId);
+                            const pricingList = cityTourMap[key];
 
                             progress.value.subLabel = `Static data for ${city?.cityName || cityId}...`;
                             try {
-                                const staticRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId: UAE_COUNTRY_ID, cityId });
+                                const staticRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId, cityId });
                                 const staticMap = {};
                                 if (staticRes.result && Array.isArray(staticRes.result)) {
                                     staticRes.result.forEach(t => staticMap[t.tourId] = t);
@@ -602,7 +724,7 @@
 
                                 // Iterate tourlist IDs — source of truth
                                 pricingList.forEach(p => {
-                                    const uniqueKey = `${p.tourId}-${cityId}`;
+                                    const uniqueKey = `${countryId}-${cityId}-${p.tourId}`;
                                     if (seenTourKeys.has(uniqueKey)) return;
                                     seenTourKeys.add(uniqueKey);
 
@@ -611,6 +733,7 @@
                                         // Full data — merge static + pricing
                                         newData.tours.push({
                                             ...staticData,
+                                            countryId,
                                             contractId: p.contractId,
                                             amount: p.amount,
                                             discount: p.discount,
@@ -619,6 +742,7 @@
                                         // No static data — push pricing only with fallback fields
                                         newData.tours.push({
                                             tourId: p.tourId,
+                                            countryId,
                                             contractId: p.contractId,
                                             amount: p.amount,
                                             discount: p.discount,
@@ -644,7 +768,7 @@
                                 progress.value.subLabel = `Fetching tour ID ${tour.tourId}...`;
                                 try {
                                     const byIdRes = await fetchWithRetry('/api/Tour/tourStaticDataById', {
-                                        countryId: UAE_COUNTRY_ID,
+                                        countryId: tour.countryId,
                                         cityId: tour.cityId,
                                         tourId: tour.tourId,
                                         contractId: tour.contractId,
@@ -653,10 +777,11 @@
                                     if (byIdRes.result && byIdRes.result.length > 0) {
                                         const staticData = byIdRes.result[0];
                                         // Replace the placeholder entry in newData.tours
-                                        const idx = newData.tours.findIndex(t => t.tourId === tour.tourId && t.cityId === tour.cityId && t.noStaticData);
+                                        const idx = newData.tours.findIndex(t => t.tourId === tour.tourId && t.cityId === tour.cityId && t.countryId === tour.countryId && t.noStaticData);
                                         if (idx !== -1) {
                                             newData.tours[idx] = {
                                                 ...staticData,
+                                                countryId: tour.countryId,
                                                 contractId: tour.contractId,
                                                 amount: tour.amount,
                                                 discount: tour.discount,
@@ -697,23 +822,29 @@
                             if (i % 10 === 0) await sleep(50);
                         }
 
-                        data.value = newData;
-                        lastSync.value = new Date().toLocaleString();
+                        const syncEnv = environment.value;
+                        dataStore.value[syncEnv] = newData;
+                        lastSyncStore.value[syncEnv] = new Date().toLocaleString();
+                        loadedEnvs.value[syncEnv] = true;
 
                         // Save to Supabase in batches
                         progress.value = { current: 0, total: 4, label: 'Saving to Supabase', subLabel: 'Uploading cities...' };
                         const BATCH = 500;
 
-                        // Cities
-                        const cityRows = newData.cities.map(c => ({ city_id: c.cityId, city_name: c.cityName, country_id: c.countryId || UAE_COUNTRY_ID }));
+                        // Cities — onConflict includes environment so Live/Sandbox rows with the
+                        // same city_id never overwrite each other. Requires a composite unique
+                        // constraint on (city_id, country_id, environment) in Supabase.
+                        const cityRows = newData.cities.map(c => ({ city_id: c.cityId, city_name: c.cityName, country_id: c.countryId, environment: syncEnv }));
                         for (let i = 0; i < cityRows.length; i += BATCH) {
-                            await supabase.from('rayna_cities').upsert(cityRows.slice(i, i + BATCH), { onConflict: 'city_id' });
+                            await supabase.from('rayna_cities').upsert(cityRows.slice(i, i + BATCH), { onConflict: 'city_id,environment' });
                         }
                         progress.value.current = 1; progress.value.subLabel = 'Uploading tours...';
 
-                        // Tours
+                        // Tours — onConflict includes environment; requires a composite unique
+                        // constraint on (tour_id, city_id, environment) in Supabase.
                         const tourRows = newData.tours.map(t => ({
                             tour_id: t.tourId, city_id: t.cityId, city_name: t.cityName,
+                            country_id: t.countryId, environment: syncEnv,
                             contract_id: t.contractId, amount: t.amount, discount: t.discount,
                             tour_name: t.tourName || null, city_tour_type: t.cityTourType || null,
                             city_tour_type_id: t.cityTourTypeId || null, duration: t.duration || null,
@@ -723,27 +854,28 @@
                             no_static_data: t.noStaticData || false,
                         }));
                         for (let i = 0; i < tourRows.length; i += BATCH) {
-                            await supabase.from('rayna_tours').upsert(tourRows.slice(i, i + BATCH), { onConflict: 'tour_id,city_id' });
+                            await supabase.from('rayna_tours').upsert(tourRows.slice(i, i + BATCH), { onConflict: 'tour_id,city_id,environment' });
                         }
                         progress.value.current = 2; progress.value.subLabel = 'Uploading options...';
 
-                        // Options
+                        // Options — onConflict includes environment; requires a composite unique
+                        // constraint on (tour_option_id, tour_id, environment) in Supabase.
                         const optRows = newData.options.map(o => ({
-                            tour_option_id: o.tourOptionId, tour_id: o.tourId,
+                            tour_option_id: o.tourOptionId, tour_id: o.tourId, environment: syncEnv,
                             option_name: o.optionName || null, city_tour_type: o.cityTourType || null
                         }));
                         for (let i = 0; i < optRows.length; i += BATCH) {
-                            await supabase.from('rayna_options').upsert(optRows.slice(i, i + BATCH), { onConflict: 'tour_option_id,tour_id' });
+                            await supabase.from('rayna_options').upsert(optRows.slice(i, i + BATCH), { onConflict: 'tour_option_id,tour_id,environment' });
                         }
                         progress.value.current = 3; progress.value.subLabel = 'Saving sync log...';
 
                         // Sync log
-                        await supabase.from('rayna_sync').insert({ synced_at: new Date().toISOString(), tour_count: newData.tours.length, option_count: newData.options.length, city_count: newData.cities.length });
+                        await supabase.from('rayna_sync').insert({ synced_at: new Date().toISOString(), environment: syncEnv, tour_count: newData.tours.length, option_count: newData.options.length, city_count: newData.cities.length });
                         progress.value.current = 4;
 
                         // Keep auth in localStorage only
                         localStorage.removeItem(STORAGE_KEY);
-                        showSuccess("Database Synced Successfully!");
+                        showSuccess(`${syncEnv === 'live' ? 'Live' : 'Sandbox'} database synced successfully!`);
                     } catch (err) { error.value = err.message; } finally { isCrawling.value = false; }
                 };
 
@@ -760,12 +892,14 @@
                         tourNameRaw: t.tour_name     || t.tourName    || '',
                         cityName:    t.city_name     || t.cityName    || '',
                         cityTourType:t.city_tour_type|| t.cityTourType|| '',
+                        countryId:   t.country_id    !== undefined ? t.country_id : t.countryId,
                         noStaticData:t.no_static_data|| t.noStaticData|| false,
                     }));
 
                     normalizedCities.value = data.value.cities.map(c => ({
                         cityId:   c.city_id   || c.cityId,
                         cityName: c.city_name || c.cityName || '',
+                        countryId: c.country_id !== undefined ? c.country_id : c.countryId,
                     }));
 
                     // Options grouped by tourId for O(1) lookup
@@ -790,17 +924,19 @@
                     const s    = debouncedSearch.value.toLowerCase().trim();
                     const cat  = selectedCategory.value;
                     const city = selectedCity.value;
-                    if (!s && cat === 'All Categories' && city === 'All Cities') return [];
+                    const country = selectedCountry.value;
+                    if (!s && cat === 'All Categories' && city === 'All Cities' && country === 'All Countries') return [];
 
                     const results = [];
                     const allCats = cat === 'All Categories';
                     const allCities = city === 'All Cities';
+                    const allCountries = country === 'All Countries';
 
                     // City results
-                    if (allCats && s) {
+                    if (allCats && allCountries && s) {
                         normalizedCities.value.forEach(c => {
                             if (c.cityName.toLowerCase().includes(s) || String(c.cityId) === s) {
-                                results.push({ type: 'City', label: c.cityName, id: c.cityId, sub: 'United Arab Emirates' });
+                                results.push({ type: 'City', label: c.cityName, id: c.cityId, sub: COUNTRY_NAMES[c.countryId] || String(c.countryId) || '' });
                             }
                         });
                     }
@@ -809,6 +945,7 @@
                     normalizedTours.value.forEach(t => {
                         if (!allCats  && t.cityTourType !== cat)  return;
                         if (!allCities && t.cityName    !== city) return;
+                        if (!allCountries && String(t.countryId) !== String(country)) return;
 
                         const matchesSearch = !s || t.tourName.includes(s) || String(t.tourId) === s;
                         const options = optionsByTourId.value[String(t.tourId)] || [];
@@ -838,7 +975,8 @@
                 }[type]);
 
                 return {
-                    apiKey, authHeaderType, searchTerm, selectedCategory, selectedCity, categoryList, cityList, isCrawling, isLoading, error, progress, data,
+                    apiKeys, authHeaderTypes, environment, searchTerm, selectedCategory, selectedCity, selectedCountry,
+                    categoryList, cityList, countryList, isCrawling, isLoading, error, progress, data,
                     isAuthenticated, passwordInput, showPassword, authError, isCheckingAuth, checkPassword,
                     startUAEDataCrawl, loadFromSupabase, filteredResults, successMsg, lastSync, lastSyncShort,
                     iconBgClass, copyId, highlightText
