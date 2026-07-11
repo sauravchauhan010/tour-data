@@ -75,10 +75,29 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+
+        /* PREMIUM ROW HIGHLIGHT STYLES */
+        .row-hover-highlight {
+            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .row-hover-highlight:hover {
+            background-color: rgba(239, 246, 255, 0.55) !important; /* Soft premium blue */
+        }
+        .option-hover-highlight {
+            transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .option-hover-highlight:hover {
+            background-color: rgba(245, 243, 255, 0.65) !important; /* Soft premium purple */
+        }
+        .active-option-row {
+            background-color: rgba(238, 242, 255, 0.9) !important; /* Rich highlighted indigo */
+            box-shadow: inset 4px 0 0 0 #4f46e5 !important; /* Solid accent bar */
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
 <body class="bg-gray-50 antialiased custom-scrollbar flex flex-col min-h-screen">
-    <div id="app" v-cloak class="flex-grow p-4 lg:p-6 pb-20">
+    <div id="app" v-cloak class="flex-grow p-4 lg:p-6 pb-24">
 
         <!-- Password Gate -->
         <div v-if="!isAuthenticated" class="fixed inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 z-50 flex items-center justify-center p-4">
@@ -189,7 +208,7 @@
                         <!-- Transfer Guide Toggle Button -->
                         <button
                             @click="showTransferGuide = true"
-                            class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm whitespace-nowrap"
+                            class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="16 3 21 8 16 13"></polyline>
@@ -220,7 +239,7 @@
 
                     <!-- Enhanced Category Filter Dropdown (Wider with Tour Count) -->
                     <div class="w-full lg:w-[420px] relative">
-                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Tour Type</label>
+                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Tour Type Category</label>
                         <select 
                             v-model="selectedCategory"
                             class="w-full p-3 pl-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-gray-50/50 text-xs sm:text-sm font-bold appearance-none cursor-pointer pr-12"
@@ -254,7 +273,7 @@
 
                     <!-- City / Location Filter -->
                     <div class="w-full lg:w-[320px] relative">
-                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">City</label>
+                        <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">City / Location</label>
                         <select
                             v-model="selectedCity"
                             class="w-full p-3 pl-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-rose-400 outline-none transition-all bg-gray-50/50 text-xs sm:text-sm font-bold appearance-none cursor-pointer pr-12"
@@ -314,13 +333,14 @@
                                 <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-24">Type</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-40 text-center">IDs</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Name</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-64">Cancellation Policy</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-56">Location/Type</th>
                                 <th class="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest w-20 text-right">Copy</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             <template v-for="(res, i) in filteredResults" :key="res.type + res.id + i">
-                                <tr class="hover:bg-blue-50/30 transition-colors group">
+                                <tr class="row-hover-highlight transition-colors group">
                                     <td class="px-6 py-4">
                                         <span :class="['text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter', iconBgClass(res.type)]">
                                             {{ res.type }}
@@ -336,6 +356,24 @@
                                             {{ res.meta }}
                                         </div>
                                     </td>
+                                    
+                                    <!-- Dedicated Cancellation Policy Column with conditional colors -->
+                                    <td class="px-6 py-4">
+                                        <div v-if="res.cancellationPolicy" 
+                                              :class="['inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border shadow-xs max-w-full shrink-0', getCancellationBadgeClass(res.cancellationPolicy)]">
+                                            <svg v-if="isNonRefundable(res.cancellationPolicy)" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span class="truncate max-w-[200px]" :title="res.cancellationPolicy">
+                                                {{ res.cancellationPolicy }}
+                                            </span>
+                                        </div>
+                                        <span v-else class="text-xs text-gray-400 italic">-</span>
+                                    </td>
+
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-bold text-gray-700" v-html="highlightText(res.sub)"></div>
                                         <div v-if="res.subMeta" class="text-[10px] text-purple-600 font-black uppercase mt-0.5">{{ res.subMeta }}</div>
@@ -347,9 +385,13 @@
                                     </td>
                                 </tr>
 
-                                <!-- Nested Options -->
+                                <!-- Nested Options Row Rendering with dynamic Active state highlight -->
                                 <template v-if="res.type === 'Tour' && res.nestedOptions && res.nestedOptions.length > 0">
-                                    <tr v-for="opt in res.nestedOptions" :key="'opt'+opt.id" class="bg-gray-50/30 hover:bg-indigo-50/40 transition-colors group relative">
+                                    <tr v-for="opt in res.nestedOptions" 
+                                        :key="'opt'+opt.id" 
+                                        :id="'opt-row-' + opt.id"
+                                        :class="['option-hover-highlight transition-all relative', activeOptionId === opt.id ? 'active-option-row' : 'bg-gray-50/30']"
+                                    >
                                         <td class="px-6 py-2.5">
                                             <div class="tree-branch">
                                                 <span class="text-[8px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded uppercase tracking-tighter border border-indigo-200 shadow-xs">
@@ -365,10 +407,11 @@
                                             <div class="flex items-center gap-2">
                                                 <div class="text-xs font-semibold text-gray-600 italic leading-snug" v-html="highlightText(opt.label)"></div>
                                                 
-                                                <!-- Click-toggle Global Popover Trigger (Now passing element references safely) -->
-                                                <div class="inline-block group/popover">
+                                                <!-- Small i-button popover toggle -->
+                                                <div class="relative inline-block">
                                                     <button 
-                                                        @click.stop="togglePopover($event, res.id, opt.id, res.contractId)"
+                                                        :id="'btn-trigger-' + opt.id"
+                                                        @click.stop="togglePopover($event, res.id, opt.id, res.contractId)" 
                                                         class="w-4 h-4 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 flex items-center justify-center text-[10px] font-black border border-blue-200/50 shadow-xs transition-colors focus:outline-none"
                                                     >
                                                         i
@@ -376,6 +419,12 @@
                                                 </div>
                                             </div>
                                         </td>
+                                        
+                                        <!-- Aligned empty cancellation policy td for Option Row -->
+                                        <td class="px-6 py-2.5">
+                                            <span class="text-xs text-gray-300">-</span>
+                                        </td>
+
                                         <td class="px-6 py-2.5">
                                             <div v-if="res.meta" class="text-[10px] text-indigo-600 font-black uppercase tracking-tight">
                                                 {{ res.meta }}
@@ -404,84 +453,65 @@
             </div>
         </div>
 
-        <!-- Fixed SVG Layer for dynamic Bezier curves to popover boundaries -->
-        <svg v-if="activePopoverId" class="fixed inset-0 pointer-events-none z-[99] w-screen h-screen">
-            <!-- Top cubic Bezier S-curve connector line -->
-            <path 
-                :d="topPathD" 
-                fill="none" 
-                stroke="#3b82f6" 
-                stroke-width="1.5" 
-                stroke-dasharray="3,3" 
-                opacity="0.6"
-            />
-            <!-- Bottom cubic Bezier S-curve connector line -->
-            <path 
-                :d="bottomPathD" 
-                fill="none" 
-                stroke="#3b82f6" 
-                stroke-width="1.5" 
-                stroke-dasharray="3,3" 
-                opacity="0.6"
-            />
-        </svg>
-
-        <!-- Global Floating Popover Container (Escapes table boundaries completely via fixed coordinates) -->
-        <div 
-            v-if="activePopoverId" 
-            id="live-popover"
-            :style="popoverStyle"
-            @click.stop
-            class="fixed z-[100] w-80 bg-white rounded-2xl shadow-2xl border-2 border-blue-500/10 p-4 transition-all duration-150"
+        <!-- Real-Time Floating Popover Portal -->
+        <div v-if="showPopoverCard" 
+             :style="{ top: popoverY + 'px', left: popoverX + 'px' }" 
+             class="fixed z-50 w-72 bg-white rounded-3xl shadow-2xl border border-gray-150 p-5 transition-all duration-150 transform hover:scale-[1.02]"
+             @click.stop
         >
-            <div class="flex items-center justify-between text-[10px] font-black text-blue-600 uppercase tracking-wider mb-1.5">
+            <div class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center justify-between">
                 <span>Live Transfer Query</span>
-                <span class="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-mono">ID: {{ activePopoverId }}</span>
+                <span class="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-mono">ID: {{ activeOptionId }}</span>
             </div>
-
-            <!-- LINE 1: Top divider line -->
-            <div class="border-t border-gray-150 my-2"></div>
             
+            <div class="border-t border-gray-100 my-2"></div>
+
             <!-- Loading State -->
-            <div v-if="getTransfersForOptionLive(activeTourId, activePopoverId).loading" class="flex items-center gap-2 py-4 justify-center">
+            <div v-if="getTransfersForOptionLive(activeTourId, activeOptionId).loading" class="flex items-center gap-2 py-4 justify-center">
                 <svg class="animate-spin w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                 <span class="text-xs text-gray-500 font-bold">Querying option details...</span>
             </div>
             
             <!-- Error state -->
-            <div v-else-if="getTransfersForOptionLive(activeTourId, activePopoverId).error" class="text-xs text-red-500 font-bold py-2 px-1 text-center bg-red-50 rounded-xl border border-red-100">
-                {{ getTransfersForOptionLive(activeTourId, activePopoverId).error === 'Not initialized' ? 'Initializing token query...' : getTransfersForOptionLive(activeTourId, activePopoverId).error }}
+            <div v-else-if="getTransfersForOptionLive(activeTourId, activeOptionId).error" class="text-xs text-red-500 font-bold py-2 px-1 text-center bg-red-50 rounded-xl border border-red-100">
+                {{ getTransfersForOptionLive(activeTourId, activeOptionId).error === 'Not initialized' ? 'Initializing query...' : getTransfersForOptionLive(activeTourId, activeOptionId).error }}
             </div>
             
             <!-- Empty State -->
-            <div v-else-if="!getTransfersForOptionLive(activeTourId, activePopoverId).data || getTransfersForOptionLive(activeTourId, activePopoverId).data.length === 0" class="text-xs text-gray-400 italic py-3 text-center bg-gray-50 rounded-xl border border-gray-100">
+            <div v-else-if="!getTransfersForOptionLive(activeTourId, activeOptionId).data || getTransfersForOptionLive(activeTourId, activeOptionId).data.length === 0" class="text-xs text-gray-400 italic py-3 text-center bg-gray-50 rounded-xl border border-gray-100">
                 No active transfers found for this setup.
             </div>
             
-            <!-- Result List (Cleaned to show Transfer Name and Prices Only) -->
-            <div v-else class="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
-                <div v-for="t in getTransfersForOptionLive(activeTourId, activePopoverId).data" :key="t.transferId" 
+            <!-- Result List (Cleaned to show Transfer Name and simple prices) -->
+            <div v-else class="space-y-3 max-h-56 overflow-y-auto custom-scrollbar">
+                <div v-for="t in getTransfersForOptionLive(activeTourId, activeOptionId).data" :key="t.transferId" 
                      class="p-3 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-orange-50/40 hover:border-orange-200 transition-all flex flex-col gap-1.5"
                 >
-                    <span class="text-xs font-semibold text-gray-800 leading-snug">{{ t.transferName }}</span>
-                    <div class="flex flex-col gap-0.5 border-t border-gray-100 pt-1.5 mt-0.5">
-                        <div class="text-xs text-emerald-600 font-bold">
-                            Adult: {{ t.adultPrice }} {{ t.currency || 'AED' }}
-                        </div>
-                        <div class="text-xs text-blue-600 font-bold">
-                            Child: {{ t.childPrice }} {{ t.currency || 'AED' }}
-                        </div>
+                    <span class="text-xs font-bold text-gray-800 leading-snug">{{ t.transferName }}</span>
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-xs text-emerald-600 font-semibold">
+                            Adult: <strong class="font-bold">{{ t.adultPrice }} {{ t.currency || 'AED' }}</strong>
+                        </span>
+                        <span class="text-xs text-blue-600 font-semibold">
+                            Child: <strong class="font-bold">{{ t.childPrice }} {{ t.currency || 'AED' }}</strong>
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- LINE 2: Bottom divider line -->
-            <div class="border-t border-gray-150 my-2"></div>
-
-            <div class="text-[9px] text-gray-400 font-bold uppercase tracking-widest text-center pt-0.5">
+            <div class="border-t border-gray-100 my-2.5"></div>
+            <div class="text-[9px] text-gray-400 text-center font-bold tracking-widest uppercase">
                 Rayna Tours Inventory System
             </div>
         </div>
+
+        <!-- Global Interactive Curving Guideline SVG Overlay Canvas -->
+        <svg v-if="showPopoverCard && activeTriggerEl" 
+             class="fixed inset-0 w-full h-full pointer-events-none z-40"
+        >
+            <path :d="bezierPaths.top" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3,3" fill="none" class="opacity-75"></path>
+            <path :d="bezierPaths.bottom" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="3,3" fill="none" class="opacity-75"></path>
+        </svg>
 
         <!-- Transfer Type Guide Slide-over Drawer -->
         <div v-if="showTransferGuide" class="fixed inset-0 z-50 overflow-hidden shadow-2xl" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
@@ -570,7 +600,7 @@
 
     </div>
 
-    <!-- Sticky Footer (Always pinned nicely at the viewport bottom) -->
+    <!-- Sticky Viewport Footer -->
     <footer class="bg-white/95 backdrop-blur-md border-t border-gray-100 py-4 mt-auto sticky bottom-0 z-40 shadow-lg">
         <div class="max-w-[1600px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-3">
@@ -618,6 +648,14 @@
                     { no: 4, name: 'Private Boat Without Transfers', id: 43129 },
                     { no: 5, name: 'Pvt Yach Without Transfer', id: 43110 }
                 ]);
+
+                // Active interactive coordinates & states
+                const showPopoverCard = ref(false);
+                const activeOptionId = ref(null);
+                const activeTourId = ref(null);
+                const activeTriggerEl = ref(null);
+                const popoverX = ref(0);
+                const popoverY = ref(0);
 
                 const checkPassword = async () => {
                     if (!passwordInput.value) return;
@@ -674,46 +712,6 @@
 
                 // Cache storage for live queries to saving duplicate API payload roundtrips (Isolated by Environment)
                 const tourOptionsCache = ref({});
-                // Track currently active popover details
-                const activePopoverId = ref(null);
-                const activeTourId = ref(null);
-                const activeTriggerEl = ref(null); // Tracks the physical active i-button trigger
-                const popoverStyle = ref({ top: '0px', left: '0px' });
-                const popoverHeight = ref(180); // Dynamic popover height state
-
-                // Anchor points for Drawing Viewport Guidelines
-                const isLeftDirection = ref(false);
-                const lineStartCoords = ref({ x: 0, y: 0 });
-                const lineEndCoords = computed(() => {
-                    const xPos = isLeftDirection.value ? parseFloat(popoverStyle.value.left) + 320 : parseFloat(popoverStyle.value.left);
-                    const topY = parseFloat(popoverStyle.value.top);
-                    const bottomY = topY + popoverHeight.value;
-                    return {
-                        topX: xPos,
-                        topY: topY,
-                        bottomX: xPos,
-                        bottomY: bottomY
-                    };
-                });
-
-                // Double curves starting from the (i) trigger right-center and curving beautifully to top-left / bottom-left of popover
-                const topPathD = computed(() => {
-                    const x0 = lineStartCoords.value.x;
-                    const y0 = lineStartCoords.value.y;
-                    const x1 = lineEndCoords.value.topX;
-                    const y1 = lineEndCoords.value.topY;
-                    const dx = (x1 - x0) * 0.5;
-                    return `M ${x0} ${y0} C ${x0 + dx} ${y0}, ${x1 - dx} ${y1}, ${x1} ${y1}`;
-                });
-
-                const bottomPathD = computed(() => {
-                    const x0 = lineStartCoords.value.x;
-                    const y0 = lineStartCoords.value.y;
-                    const x1 = lineEndCoords.value.bottomX;
-                    const y1 = lineEndCoords.value.bottomY;
-                    const dx = (x1 - x0) * 0.5;
-                    return `M ${x0} ${y0} C ${x0 + dx} ${y0}, ${x1 - dx} ${y1}, ${x1} ${y1}`;
-                });
 
                 // Fetch options and active transfer ID payload (Isolated by Environment)
                 const fetchTourOptions = async (tourId, contractId) => {
@@ -742,8 +740,6 @@
                                 data: response.result,
                                 error: null
                             };
-                            // Re-calculate guide coordinates to adjust for size change after results load
-                            setTimeout(updatePopoverHeight, 100);
                         } else {
                             throw new Error(response?.errormessage || response?.error || 'No transfers found.');
                         }
@@ -753,71 +749,6 @@
                             data: null,
                             error: err.message || 'Authentication key or connection error.'
                         };
-                        setTimeout(updatePopoverHeight, 100);
-                    }
-                };
-
-                const updatePopoverPosition = () => {
-                    if (!activeTriggerEl.value) return;
-                    const rect = activeTriggerEl.value.getBoundingClientRect();
-                    
-                    // Dynamic visibility check: if the button gets scrolled completely out of the scrollable table box, hide popover
-                    const tableContainer = document.querySelector('.table-container');
-                    if (tableContainer) {
-                        const containerRect = tableContainer.getBoundingClientRect();
-                        // Allow small buffer (e.g. 5px) to prevent flicker at exact edge
-                        if (rect.bottom < containerRect.top + 5 || rect.top > containerRect.bottom - 5) {
-                            activePopoverId.value = null;
-                            activeTourId.value = null;
-                            activeTriggerEl.value = null;
-                            return;
-                        }
-                    }
-
-                    const rightSpace = window.innerWidth - rect.right;
-                    let leftPos = rect.right + 20; // Exact padding layout matching dc93ba.png
-                    isLeftDirection.value = false;
-                    
-                    if (rightSpace < 340) {
-                        leftPos = rect.left - 340;
-                        isLeftDirection.value = true;
-                    }
-                    
-                    const topPos = rect.top - 30;
-
-                    popoverStyle.value = {
-                        top: `${topPos}px`,
-                        left: `${leftPos}px`
-                    };
-
-                    lineStartCoords.value = {
-                        x: isLeftDirection.value ? rect.left : rect.right,
-                        y: rect.top + (rect.height / 2)
-                    };
-                    
-                    updatePopoverHeight();
-                };
-
-                // Click action to toggle the popover (Now with dynamic global viewport coordinates)
-                const togglePopover = (event, tourId, optionId, contractId) => {
-                    if (activePopoverId.value === optionId) {
-                        activePopoverId.value = null;
-                        activeTourId.value = null;
-                        activeTriggerEl.value = null;
-                    } else {
-                        activePopoverId.value = optionId;
-                        activeTourId.value = tourId;
-                        activeTriggerEl.value = event.currentTarget; // Store physical trigger element
-                        
-                        updatePopoverPosition();
-                        fetchTourOptions(tourId, contractId);
-                    }
-                };
-
-                const updatePopoverHeight = () => {
-                    const el = document.getElementById('live-popover');
-                    if (el) {
-                        popoverHeight.value = el.offsetHeight;
                     }
                 };
 
@@ -836,6 +767,77 @@
                         return { loading: false, data: matched, error: null };
                     }
                     return { loading: false, data: null, error: 'No data returned' };
+                };
+
+                // Click-toggle dynamic trigger handler
+                const togglePopover = async (event, tourId, optionId, contractId) => {
+                    if (activeOptionId.value === optionId) {
+                        // Dismiss popover if selected again
+                        dismissPopover();
+                        return;
+                    }
+
+                    activeOptionId.value = optionId;
+                    activeTourId.value = tourId;
+                    activeTriggerEl.value = event.currentTarget;
+                    showPopoverCard.value = true;
+
+                    // Trigger non-blocking cache prefetch
+                    await fetchTourOptions(tourId, contractId);
+                    
+                    // Render coordinates and curves
+                    recalculatePopoverCoords();
+                };
+
+                const dismissPopover = () => {
+                    activeOptionId.value = null;
+                    activeTourId.value = null;
+                    activeTriggerEl.value = null;
+                    showPopoverCard.value = false;
+                };
+
+                // Re-calculates active targets on scroll and resize transitions
+                const recalculatePopoverCoords = () => {
+                    if (!activeTriggerEl.value || !showPopoverCard.value) return;
+
+                    const rect = activeTriggerEl.value.getBoundingClientRect();
+                    
+                    // Set contextual coordinates outside boundaries
+                    popoverX.value = rect.right + 24; 
+                    popoverY.value = rect.top - 36;
+
+                    // Boundaries checks
+                    if (popoverX.value + 288 > window.innerWidth) {
+                        popoverX.value = Math.max(10, rect.left - 312);
+                    }
+                };
+
+                // Computes beautiful curved S-shaped Bezier connector lines matches image_dc9382.png
+                const bezierPaths = computed(() => {
+                    if (!activeTriggerEl.value || !showPopoverCard.value) return { top: '', bottom: '' };
+
+                    const trigRect = activeTriggerEl.value.getBoundingClientRect();
+                    const startX = trigRect.right;
+                    const startY = trigRect.top + (trigRect.height / 2);
+
+                    const targetX = popoverX.value;
+                    const targetYTop = popoverY.value + 12; // curves meet top-left corner bounds
+                    const targetYBottom = popoverY.value + 168; // curves meet bottom-left corner bounds
+
+                    const c1X = startX + (targetX - startX) * 0.4;
+                    const c2X = startX + (targetX - startX) * 0.6;
+
+                    const topPath = `M ${startX} ${startY} C ${c1X} ${startY}, ${c2X} ${targetYTop}, ${targetX} ${targetYTop}`;
+                    const bottomPath = `M ${startX} ${startY} C ${c1X} ${startY}, ${c2X} ${targetYBottom}, ${targetX} ${targetYBottom}`;
+
+                    return { top: topPath, bottom: bottomPath };
+                });
+
+                // Attach scrolling sync handlers directly inside capturing phase
+                const handleScroll = () => {
+                    if (showPopoverCard.value) {
+                        recalculatePopoverCoords();
+                    }
                 };
 
                 // Separate in-memory store per environment so Live/Sandbox never overwrite each other
@@ -895,33 +897,13 @@
 
                 // Switching the Live/Sandbox tab loads that environment's data the first time it's selected
                 watch(environment, async (newEnv) => {
+                    dismissPopover();
                     if (!loadedEnvs.value[newEnv] && isAuthenticated.value) {
                         await loadFromSupabase(newEnv);
                     }
                 });
 
                 onMounted(async () => {
-                    // Click outside anywhere on document closes popovers safely
-                    document.addEventListener('click', (e) => {
-                        if (e.target.closest('.group\\/popover') || e.target.closest('#live-popover')) {
-                            return;
-                        }
-                        activePopoverId.value = null;
-                        activeTourId.value = null;
-                        activeTriggerEl.value = null;
-                    });
-
-                    // Dynamic scroll tracking: Listen to ALL scroll events on capture phase (extremely reliable!)
-                    const handleScroll = () => {
-                        if (activePopoverId.value && activeTriggerEl.value) {
-                            updatePopoverPosition();
-                        }
-                    };
-
-                    // Capture phase ensures we catch internal scrolling from table containers as well!
-                    window.addEventListener('scroll', handleScroll, { capture: true, passive: true });
-                    window.addEventListener('resize', handleScroll, { passive: true });
-
                     const savedAuth = localStorage.getItem(AUTH_KEY);
                     if (savedAuth) {
                         try {
@@ -942,6 +924,11 @@
                         } catch(e) {}
                     }
                     if (isAuthenticated.value) await loadFromSupabase();
+
+                    // Listeners for active popover coordinate recalculations on capturing layers
+                    window.addEventListener('scroll', handleScroll, { capture: true, passive: true });
+                    window.addEventListener('resize', handleScroll, { passive: true });
+                    window.addEventListener('click', dismissPopover);
                 });
 
                 const categoryList = computed(() => {
@@ -980,6 +967,20 @@
                 const showSuccess = (msg) => {
                     successMsg.value = msg;
                     setTimeout(() => successMsg.value = null, 3000);
+                };
+
+                const isNonRefundable = (policy) => {
+                    if (!policy) return false;
+                    const p = policy.toLowerCase();
+                    return p.includes('non-refundable') || p.includes('non refundable') || p.includes('no refund') || p.includes('nonrefundable');
+                };
+
+                const getCancellationBadgeClass = (policy) => {
+                    if (isNonRefundable(policy)) {
+                        return 'bg-red-50 text-red-700 border-red-100/80';
+                    } else {
+                        return 'bg-emerald-50 text-emerald-700 border-emerald-100/80';
+                    }
                 };
 
                 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1187,8 +1188,12 @@
                             try {
                                 const optRes = await fetchWithRetry('/api/Tour/touroptionstaticdata', { tourId: tour.tourId, contractId: tour.contractId });
                                 if (optRes.result) {
+                                    let cancellationPolicy = optRes.result.cancellationPolicy || optRes.result.cancellationpolicy || '';
                                     const list = optRes.result.touroption || optRes.result.touroptions || (Array.isArray(optRes.result) ? optRes.result : []);
                                     if (Array.isArray(list)) {
+                                        if (!cancellationPolicy && list.length > 0) {
+                                            cancellationPolicy = list[0].cancellationPolicy || list[0].cancellationpolicy || '';
+                                        }
                                         list.forEach(opt => {
                                             const uniqueKey = `${tour.tourId}-${opt.tourOptionId}`;
                                             if (!seenOptionIds.has(uniqueKey)) {
@@ -1202,6 +1207,7 @@
                                             }
                                         });
                                     }
+                                    tour.cancellationPolicy = cancellationPolicy;
                                 }
                             } catch(e) { /* skip tour on error */ }
                             progress.value.current = i + 1;
@@ -1232,7 +1238,7 @@
                             tour_name: t.tourName || null, city_tour_type: t.cityTourType || null,
                             city_tour_type_id: t.cityTourTypeId || null, duration: t.duration || null,
                             rating: t.rating || null, review_count: t.reviewCount || null,
-                            image_path: t.imagePath || null, cancellation_policy: t.cancellationPolicyName || null,
+                            image_path: t.imagePath || null, cancellation_policy: t.cancellationPolicy || t.cancellationPolicyName || null,
                             is_slot: t.isSlot || false, is_seat: t.isSeat || false,
                             no_static_data: t.noStaticData || false,
                         }));
@@ -1277,6 +1283,7 @@
                         cityTourType:t.city_tour_type|| t.cityTourType|| '',
                         countryId:   t.country_id    !== undefined ? t.country_id : t.countryId,
                         noStaticData:t.no_static_data|| t.noStaticData|| false,
+                        cancellationPolicy: t.cancellation_policy || t.cancellationPolicy || '',
                     }));
 
                     normalizedCities.value = data.value.cities.map(c => ({
@@ -1302,13 +1309,6 @@
 
                 watch(() => data.value.tours.length, buildIndexes);
                 watch(() => data.value.options.length, buildIndexes);
-                
-                // Rebuild indexes and flush query dependencies instantly on tab/environment change
-                watch(environment, () => {
-                    buildIndexes();
-                    activePopoverId.value = null; // Close popovers on env switch
-                    activeTourId.value = null;
-                });
 
                 const filteredResults = computed(() => {
                     const s    = debouncedSearch.value.toLowerCase().trim();
@@ -1353,6 +1353,7 @@
                                 subMeta: t.cityTourType,
                                 noStaticData: t.noStaticData,
                                 nestedOptions: matchedOptions,
+                                cancellationPolicy: t.cancellationPolicy,
                             });
                         }
                     });
@@ -1373,8 +1374,8 @@
                     iconBgClass, copyId, highlightText,
                     showTransferGuide, transferTypes,
                     fetchTourOptions, getTransfersForOptionLive,
-                    activePopoverId, activeTourId, popoverStyle, togglePopover,
-                    lineStartCoords, lineEndCoords, topPathD, bottomPathD
+                    isNonRefundable, getCancellationBadgeClass,
+                    showPopoverCard, activeOptionId, activeTourId, activeTriggerEl, popoverX, popoverY, togglePopover, bezierPaths
                 };
             }
         }).mount('#app');
