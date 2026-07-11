@@ -162,9 +162,9 @@
                             :placeholder="environment === 'live' ? 'Enter Live Key...' : 'Enter Sandbox Key...'"
                             :class="['w-full text-xs p-2 rounded-l-xl border outline-none transition-all shadow-sm', environment === 'live' ? 'border-emerald-200 focus:ring-2 focus:ring-emerald-400' : 'border-amber-200 focus:ring-2 focus:ring-amber-400']"
                         />
-                      
                     </div>
                     <div class="flex gap-2 w-full sm:w-auto">
+                        <!-- Sync Data Button -->
                         <button 
                             @click="startUAEDataCrawl"
                             :disabled="isCrawling || isLoading"
@@ -173,8 +173,10 @@
                             <svg v-if="isCrawling" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                             {{ isCrawling ? 'Syncing...' : 'Sync Data' }}
                         </button>
+
+                        <!-- Refresh Button (Safely called using direct parenthesis) -->
                         <button
-                            @click="loadFromSupabase"
+                            @click="loadFromSupabase()"
                             :disabled="isCrawling || isLoading"
                             title="Reload from Supabase"
                             class="px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
@@ -182,6 +184,20 @@
                             <svg v-if="isLoading" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                             <svg v-else xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
                             {{ isLoading ? 'Loading...' : 'Refresh' }}
+                        </button>
+
+                        <!-- Transfer Guide Toggle Button -->
+                        <button
+                            @click="showTransferGuide = true"
+                            class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="16 3 21 8 16 13"></polyline>
+                                <line x1="21" y1="8" x2="9" y2="8"></line>
+                                <polyline points="8 21 3 16 8 11"></polyline>
+                                <line x1="3" y1="16" x2="15" y2="16"></line>
+                            </svg>
+                            Transfer Guide
                         </button>
                     </div>
                 </div>
@@ -346,7 +362,52 @@
                                             </div>
                                         </td>
                                         <td class="px-6 py-2.5">
-                                            <div class="text-xs font-semibold text-gray-600 italic leading-snug" v-html="highlightText(opt.label)"></div>
+                                            <div class="flex items-center gap-2">
+                                                <div class="text-xs font-semibold text-gray-600 italic leading-snug" v-html="highlightText(opt.label)"></div>
+                                                
+                                                <!-- Small i-button popover trigger linked to api/Tour/touroption -->
+                                                <div class="relative inline-block group/popover" @mouseenter="fetchTourOptions(res.id, res.contractId)">
+                                                    <button class="w-4 h-4 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 flex items-center justify-center text-[10px] font-black border border-blue-200/50 shadow-xs transition-colors focus:outline-none">
+                                                        i
+                                                    </button>
+                                                    
+                                                    <!-- Dropdown Tooltip matching original aesthetic -->
+                                                    <div class="absolute left-6 top-1/2 -translate-y-1/2 hidden group-hover/popover:block z-50 w-72 bg-white rounded-2xl shadow-xl border border-gray-150 p-4 transition-all duration-150">
+                                                        <div class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 border-b border-gray-100 pb-1.5 flex items-center justify-between">
+                                                            <span>Live Transfer Query</span>
+                                                            <span class="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md font-mono">ID: {{ opt.id }}</span>
+                                                        </div>
+                                                        
+                                                        <!-- Loading State -->
+                                                        <div v-if="getTransfersForOptionLive(res.id, opt.id).loading" class="flex items-center gap-2 py-4 justify-center">
+                                                            <svg class="animate-spin w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                                                            <span class="text-xs text-gray-500 font-bold">Querying option details...</span>
+                                                        </div>
+                                                        
+                                                        <!-- Error state -->
+                                                        <div v-else-if="getTransfersForOptionLive(res.id, opt.id).error" class="text-xs text-red-500 font-bold py-2 px-1 text-center bg-red-50 rounded-xl border border-red-100">
+                                                            {{ getTransfersForOptionLive(res.id, opt.id).error === 'Not initialized' ? 'Initializing token query...' : getTransfersForOptionLive(res.id, opt.id).error }}
+                                                        </div>
+                                                        
+                                                        <!-- Empty State -->
+                                                        <div v-else-if="!getTransfersForOptionLive(res.id, opt.id).data || getTransfersForOptionLive(res.id, opt.id).data.length === 0" class="text-xs text-gray-400 italic py-3 text-center bg-gray-50 rounded-xl border border-gray-100">
+                                                            No active transfers found for this setup.
+                                                        </div>
+                                                        
+                                                        <!-- Result List (Cleaned to show Transfer Name and Prices Only) -->
+                                                        <div v-else class="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
+                                                            <div v-for="t in getTransfersForOptionLive(res.id, opt.id).data" :key="t.transferId" 
+                                                                 class="p-2.5 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-orange-50/40 hover:border-orange-200 transition-all flex flex-col gap-1"
+                                                            >
+                                                                <span class="text-xs font-bold text-gray-800 leading-snug">{{ t.transferName }}</span>
+                                                                <span class="text-[10px] text-emerald-600 font-extrabold uppercase tracking-wide">
+                                                                    Adult Price: {{ t.adultPrice }} {{ t.currency || 'AED' }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-2.5">
                                             <div v-if="res.meta" class="text-[10px] text-indigo-600 font-black uppercase tracking-tight">
@@ -375,6 +436,92 @@
                 </div>
             </div>
         </div>
+
+        <!-- Transfer Type Guide Slide-over Drawer -->
+        <div v-if="showTransferGuide" class="fixed inset-0 z-50 overflow-hidden shadow-2xl" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 overflow-hidden">
+                <!-- Background backdrop -->
+                <div @click="showTransferGuide = false" class="absolute inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
+
+                <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
+                    <div class="pointer-events-auto w-screen max-w-md transform transition-all duration-300 ease-in-out">
+                        <div class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-2xl rounded-l-3xl border-l border-gray-100 custom-scrollbar">
+                            <!-- Drawer Header -->
+                            <div class="px-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="p-2.5 rounded-xl bg-orange-50 text-orange-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="16 3 21 8 16 13"></polyline>
+                                            <line x1="21" y1="8" x2="9" y2="8"></line>
+                                            <polyline points="8 21 3 16 8 11"></polyline>
+                                            <line x1="3" y1="16" x2="15" y2="16"></line>
+                                        </svg>
+                                    </span>
+                                    <div>
+                                        <h2 class="text-lg font-black text-gray-900 tracking-tight" id="slide-over-title">Transfer Type</h2>
+                                        <p class="text-xs text-gray-400 font-semibold tracking-wide uppercase">API Guide Cheat-Sheet</p>
+                                    </div>
+                                </div>
+                                <button @click="showTransferGuide = false" class="rounded-xl p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-all">
+                                    <span class="sr-only">Close panel</span>
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Drawer Content -->
+                            <div class="relative flex-1 px-6 py-6 space-y-6">
+                                <!-- Instruction Info Box -->
+                                <div class="bg-orange-50/70 border border-orange-100 rounded-2xl p-4">
+                                    <p class="text-xs text-orange-850 font-bold leading-relaxed">
+                                        Every product has a default transfer type and the Below id is passed along with the specific product ids.
+                                    </p>
+                                </div>
+
+                                <!-- Table perfectly reflecting your uploaded image -->
+                                <div class="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                                    <table class="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr class="bg-[#FDF2F0] border-b border-orange-100">
+                                                <th class="px-4 py-3.5 text-xs font-black text-orange-950 uppercase tracking-wider w-16 text-center">No.</th>
+                                                <th class="px-4 py-3.5 text-xs font-black text-orange-950 uppercase tracking-wider">Transfer Name</th>
+                                                <th class="px-4 py-3.5 text-xs font-black text-orange-950 uppercase tracking-wider w-32 text-center">Transfer ID</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-100">
+                                            <tr v-for="t in transferTypes" :key="t.no" 
+                                                class="hover:bg-orange-50/30 transition-colors group cursor-pointer"
+                                                @click="copyId(t.id)"
+                                            >
+                                                <td class="px-4 py-3.5 text-xs font-black text-gray-400 text-center">{{ t.no }}</td>
+                                                <td class="px-4 py-3.5 text-xs font-bold text-gray-800 group-hover:text-orange-600 transition-colors">{{ t.name }}</td>
+                                                <td class="px-4 py-3.5">
+                                                    <div class="flex items-center justify-between gap-1.5 bg-amber-50 group-hover:bg-orange-100/50 px-2.5 py-1.5 rounded-lg border border-amber-100 group-hover:border-orange-200 transition-all">
+                                                        <span class="text-xs font-mono font-black text-amber-800 group-hover:text-orange-800">{{ t.id }}</span>
+                                                        <svg class="w-3.5 h-3.5 text-amber-400 group-hover:text-orange-600 transition-colors" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                                                        </svg>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="text-center bg-gray-50 rounded-xl py-3 border border-gray-100">
+                                    <p class="text-[10px] text-gray-400 font-bold tracking-wide uppercase">
+                                        💡 Click any row to instantly copy the Transfer ID.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Footer -->
@@ -415,6 +562,16 @@
                 const showPassword = ref(false);
                 const authError = ref('');
                 const isCheckingAuth = ref(false);
+
+                // Transfer types from your uploaded image
+                const showTransferGuide = ref(false);
+                const transferTypes = ref([
+                    { no: 1, name: 'Without Transfer', id: 41865 },
+                    { no: 2, name: 'Sharing Transfer', id: 41843 },
+                    { no: 3, name: 'Private Transfer', id: 41844 },
+                    { no: 4, name: 'Private Boat Without Transfers', id: 43129 },
+                    { no: 5, name: 'Pvt Yach Without Transfer', id: 43110 }
+                ]);
 
                 const checkPassword = async () => {
                     if (!passwordInput.value) return;
@@ -469,6 +626,65 @@
                 const successMsg = ref(null);
                 const progress = ref({ current: 0, total: 0, label: '', subLabel: '' });
 
+                // Cache storage for live queries to saving duplicate API payload roundtrips
+                const tourOptionsCache = ref({});
+
+                // Fetch options and active transfer ID payload (Isolated by Environment)
+                const fetchTourOptions = async (tourId, contractId) => {
+                    const env = environment.value;
+                    const cacheKey = `${env}_${tourId}`;
+                    // Do not duplicate requests if already cached or fetching
+                    if (tourOptionsCache.value[cacheKey]) return;
+
+                    tourOptionsCache.value[cacheKey] = { loading: true, data: null, error: null };
+                    
+                    try {
+                        const travelDate = new Date().toISOString().slice(0, 10); // Standard YYYY-MM-DD
+                        const payload = {
+                            tourId: Number(tourId),
+                            contractId: Number(contractId) || 0,
+                            travelDate,
+                            noOfAdult: 1,
+                            noOfChild: 0,
+                            noOfInfant: 0
+                        };
+
+                        const response = await fetchWithRetry('/api/Tour/touroption', payload);
+                        if (response && response.statuscode == 200 && Array.isArray(response.result)) {
+                            tourOptionsCache.value[cacheKey] = {
+                                loading: false,
+                                data: response.result,
+                                error: null
+                            };
+                        } else {
+                            throw new Error(response?.errormessage || response?.error || 'No transfers found.');
+                        }
+                    } catch (err) {
+                        tourOptionsCache.value[cacheKey] = {
+                            loading: false,
+                            data: null,
+                            error: err.message || 'Authentication key or connection error.'
+                        };
+                    }
+                };
+
+                // Compute exact available transfers for a single nested option dynamically (Isolated by Environment)
+                const getTransfersForOptionLive = (tourId, optionId) => {
+                    const env = environment.value;
+                    const cacheKey = `${env}_${tourId}`;
+                    const cached = tourOptionsCache.value[cacheKey];
+                    if (!cached) return { loading: false, data: null, error: 'Not initialized' };
+                    if (cached.loading) return { loading: true, data: null, error: null };
+                    if (cached.error) return { loading: false, data: null, error: cached.error };
+                    
+                    if (Array.isArray(cached.data)) {
+                        // Filter the result set matching this optionId specifically
+                        const matched = cached.data.filter(item => String(item.tourOptionId) === String(optionId));
+                        return { loading: false, data: matched, error: null };
+                    }
+                    return { loading: false, data: null, error: 'No data returned' };
+                };
+
                 // Separate in-memory store per environment so Live/Sandbox never overwrite each other
                 const makeEmptyEnvData = () => ({
                     countries: COUNTRY_IDS.map(id => ({ countryId: id, countryName: COUNTRY_NAMES[id] || String(id) })),
@@ -485,7 +701,8 @@
                 const isLoading = ref(false);
 
                 const loadFromSupabase = async (envOverride) => {
-                    const env = envOverride || environment.value;
+                    // Safe verification: Ensure PointerEvent isn't processed as a string environment overrides
+                    const env = (typeof envOverride === 'string') ? envOverride : environment.value;
                     isLoading.value = true;
                     try {
                         // Paginate to get all records past Supabase's 1000 row limit, filtered by environment
@@ -547,7 +764,7 @@
                                 authHeaderTypes.value.live = parsed.type || 'Bearer';
                             }
                             // Always default to Live on load; don't restore last-used tab
-                                  environment.value = 'live';
+                            environment.value = 'live';
                         } catch(e) {}
                     }
                     if (isAuthenticated.value) await loadFromSupabase();
@@ -826,17 +1043,14 @@
                         progress.value = { current: 0, total: 4, label: 'Saving to Supabase', subLabel: 'Uploading cities...' };
                         const BATCH = 500;
 
-                        // Cities — onConflict includes environment so Live/Sandbox rows with the
-                        // same city_id never overwrite each other. Requires a composite unique
-                        // constraint on (city_id, country_id, environment) in Supabase.
+                        // Cities
                         const cityRows = newData.cities.map(c => ({ city_id: c.cityId, city_name: c.cityName, country_id: c.countryId, environment: syncEnv }));
                         for (let i = 0; i < cityRows.length; i += BATCH) {
                             await supabase.from('rayna_cities').upsert(cityRows.slice(i, i + BATCH), { onConflict: 'city_id,environment' });
                         }
                         progress.value.current = 1; progress.value.subLabel = 'Uploading tours...';
 
-                        // Tours — onConflict includes environment; requires a composite unique
-                        // constraint on (tour_id, city_id, environment) in Supabase.
+                        // Tours
                         const tourRows = newData.tours.map(t => ({
                             tour_id: t.tourId, city_id: t.cityId, city_name: t.cityName,
                             country_id: t.countryId, environment: syncEnv,
@@ -853,8 +1067,7 @@
                         }
                         progress.value.current = 2; progress.value.subLabel = 'Uploading options...';
 
-                        // Options — onConflict includes environment; requires a composite unique
-                        // constraint on (tour_option_id, tour_id, environment) in Supabase.
+                        // Options
                         const optRows = newData.options.map(o => ({
                             tour_option_id: o.tourOptionId, tour_id: o.tourId, environment: syncEnv,
                             option_name: o.optionName || null, city_tour_type: o.cityTourType || null
@@ -883,6 +1096,7 @@
                     // Normalize all tours to consistent shape once
                     normalizedTours.value = data.value.tours.map(t => ({
                         tourId:      t.tour_id       || t.tourId,
+                        contractId:  t.contract_id   || t.contractId || 0, // MAP CONTRACT ID CRITICAL FOR LIVE API HOVER
                         tourName:    (t.tour_name    || t.tourName    || '').toLowerCase(),
                         tourNameRaw: t.tour_name     || t.tourName    || '',
                         cityName:    t.city_name     || t.cityName    || '',
@@ -914,6 +1128,9 @@
 
                 watch(() => data.value.tours.length, buildIndexes);
                 watch(() => data.value.options.length, buildIndexes);
+                
+                // Rebuild indexes and flush query dependencies instantly on tab/environment change
+                watch(environment, buildIndexes);
 
                 const filteredResults = computed(() => {
                     const s    = debouncedSearch.value.toLowerCase().trim();
@@ -953,6 +1170,7 @@
                                 type: 'Tour',
                                 label: t.tourNameRaw,
                                 id: t.tourId,
+                                contractId: t.contractId, // PRESERVED DYNAMIC CONTRACT ID MAPPER
                                 sub: t.cityName,
                                 subMeta: t.cityTourType,
                                 noStaticData: t.noStaticData,
@@ -974,7 +1192,9 @@
                     categoryList, cityList, countryList, isCrawling, isLoading, error, progress, data,
                     isAuthenticated, passwordInput, showPassword, authError, isCheckingAuth, checkPassword,
                     startUAEDataCrawl, loadFromSupabase, filteredResults, successMsg, lastSync, lastSyncShort,
-                    iconBgClass, copyId, highlightText
+                    iconBgClass, copyId, highlightText,
+                    showTransferGuide, transferTypes,
+                    fetchTourOptions, getTransfersForOptionLive
                 };
             }
         }).mount('#app');
