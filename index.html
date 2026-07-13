@@ -179,7 +179,8 @@
                             type="password"
                             v-model="apiKeys[environment]"
                             :placeholder="environment === 'live' ? 'Enter Live Key...' : 'Enter Sandbox Key...'"
-                            :class="['w-full text-xs p-2 rounded-l-xl border outline-none transition-all shadow-sm', environment === 'live' ? 'border-emerald-200 focus:ring-2 focus:ring-emerald-400' : 'border-amber-200 focus:ring-2 focus:ring-amber-400']"
+                            class="w-full text-xs p-2 rounded-xl border outline-none transition-all shadow-sm border-gray-200 focus:ring-2 focus:ring-gray-400"
+                            :class="environment === 'live' ? 'border-emerald-200 focus:ring-2 focus:ring-emerald-400' : 'border-amber-200 focus:ring-2 focus:ring-amber-400'"
                         />
                     </div>
                     <div class="flex gap-2 w-full sm:w-auto">
@@ -217,6 +218,16 @@
                                 <line x1="3" y1="16" x2="15" y2="16"></line>
                             </svg>
                             Transfer Guide
+                        </button>
+
+                        <!-- Test Token Popup Toggle Button -->
+                        <button
+                            @click="openTokenTester"
+                            title="Test a token"
+                            class="px-3 py-2 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-9.6 9.6"/><path d="M15.5 7.5 20 12l-2.5 6.5L12 21l-3-3 2-2"/><path d="M2 22c1.1-1.1 3-3 3-3"/><circle cx="7" cy="17" r="1"/></svg>
+                            Test Token
                         </button>
                     </div>
                 </div>
@@ -598,6 +609,90 @@
             </div>
         </div>
 
+        <!-- Token Tester Modal -->
+        <div v-if="showTokenTester" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-labelledby="token-tester-title" role="dialog" aria-modal="true">
+            <div @click="showTokenTester = false" class="absolute inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
+
+            <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 transform transition-all duration-200">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
+                    <div class="flex items-center gap-2.5">
+                        <span class="p-2.5 rounded-xl bg-gray-900 text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-9.6 9.6"/><path d="M15.5 7.5 20 12l-2.5 6.5L12 21l-3-3 2-2"/><path d="M2 22c1.1-1.1 3-3 3-3"/><circle cx="7" cy="17" r="1"/></svg>
+                        </span>
+                        <div>
+                            <h2 class="text-base font-black text-gray-900 tracking-tight" id="token-tester-title">Token Tester</h2>
+                            <p class="text-[10px] text-gray-400 font-semibold tracking-wide uppercase">Tests against {{ environment === 'live' ? 'Live' : 'Sandbox' }} API</p>
+                        </div>
+                    </div>
+                    <button @click="showTokenTester = false" class="rounded-xl p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-all">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+
+                <!-- Dedicated Token Input Box -->
+                <div class="mb-4">
+                    <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Paste token to test</label>
+                    <textarea
+                        v-model="tokenToTest"
+                        rows="4"
+                        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        class="w-full text-xs font-mono p-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all bg-gray-50/50 resize-none"
+                    ></textarea>
+                </div>
+
+                <button
+                    @click="testToken"
+                    :disabled="!tokenToTest.trim() || tokenTest.status === 'testing'"
+                    class="w-full mb-4 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs disabled:opacity-40 transition-all flex items-center justify-center gap-2"
+                >
+                    <svg v-if="tokenTest.status === 'testing'" class="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-9.6 9.6"/><path d="M15.5 7.5 20 12l-2.5 6.5L12 21l-3-3 2-2"/><path d="M2 22c1.1-1.1 3-3 3-3"/><circle cx="7" cy="17" r="1"/></svg>
+                    {{ tokenTest.status === 'testing' ? 'Testing...' : 'Verify & Call API' }}
+                </button>
+
+                <!-- Results -->
+                <div v-if="tokenTest.status === 'done'" class="space-y-4">
+                    <!-- Status Card -->
+                    <div :class="['rounded-2xl p-4 border flex items-center justify-between', tokenTest.success ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50']">
+                        <div class="flex items-center gap-3">
+                            <div :class="['p-2 rounded-xl', tokenTest.success ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600']">
+                                <svg v-if="tokenTest.success" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            </div>
+                            <div>
+                                <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Connection Status</div>
+                                <h3 :class="['text-sm font-black', tokenTest.success ? 'text-emerald-700' : 'text-red-700']">
+                                    {{ tokenTest.httpStatus === 0 ? 'Blocked / Network Error' : (tokenTest.success ? ('Connected (HTTP ' + tokenTest.httpStatus + ')') : ('Rejected (HTTP ' + tokenTest.httpStatus + ')')) }}
+                                </h3>
+                            </div>
+                        </div>
+                        <span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider', tokenTest.success ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white']">
+                            {{ tokenTest.success ? 'Passed' : 'Failed' }}
+                        </span>
+                    </div>
+
+                    <!-- Extracted Email -->
+                    <div class="p-4 bg-gray-50 border border-gray-100 rounded-2xl space-y-2">
+                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest">Extracted User Email</span>
+                        <div class="flex items-start gap-2 text-sm font-bold">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 shrink-0 mt-0.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            <div class="w-full">
+                                <span :class="['break-all font-mono text-xs', tokenTest.email ? 'text-gray-900' : 'text-gray-400 italic']">
+                                    {{ tokenTest.email || 'No email found inside token payload.' }}
+                                </span>
+                                <div v-if="!tokenTest.email && tokenTest.debugKeys" class="mt-2 pt-2 border-t border-gray-200 text-[10px] text-gray-500">
+                                    <span class="block font-bold mb-1 uppercase tracking-wide text-gray-400">Keys found in token payload:</span>
+                                    <code class="block font-mono bg-white p-2 rounded-lg border border-gray-100 text-gray-600 break-words">{{ tokenTest.debugKeys }}</code>
+                                </div>
+                                <div v-if="tokenTest.decodeError" class="mt-2 text-[10px] text-red-500 font-bold">{{ tokenTest.decodeError }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Sticky Viewport Footer -->
@@ -648,6 +743,102 @@
                     { no: 4, name: 'Private Boat Without Transfers', id: 43129 },
                     { no: 5, name: 'Pvt Yach Without Transfer', id: 43110 }
                 ]);
+
+                // ---- Token Tester feature ----
+                const showTokenTester = ref(false);
+                const tokenToTest = ref('');
+                const tokenTest = ref({ status: 'idle', success: false, httpStatus: null, email: null, debugKeys: null, decodeError: null });
+
+                // Opens the popup with a fresh, empty token box every time
+                const openTokenTester = () => {
+                    tokenToTest.value = '';
+                    tokenTest.value = { status: 'idle', success: false, httpStatus: null, email: null, debugKeys: null, decodeError: null };
+                    showTokenTester.value = true;
+                };
+
+                // Robust client-side JWT decoding with deep fallback patterns
+                const parseAndExtractEmail = (token) => {
+                    try {
+                        if (!token) return { email: null, error: 'Empty token' };
+                        const parts = token.trim().split('.');
+                        if (parts.length !== 3) {
+                            return { email: null, error: 'Token format mismatch (JWT requires 3 dot-separated parts)' };
+                        }
+                        const payloadRaw = parts[1];
+                        const base64UrlDecode = (str) => {
+                            let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+                            while (base64.length % 4) base64 += '=';
+                            return decodeURIComponent(
+                                atob(base64).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+                            );
+                        };
+                        const payload = JSON.parse(base64UrlDecode(payloadRaw));
+
+                        const targetKeys = [
+                            'email', 'emailaddress', 'email_address', 'mail',
+                            'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
+                            'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+                            'upn', 'sub', 'unique_name'
+                        ];
+                        for (const key of targetKeys) {
+                            if (payload[key] && typeof payload[key] === 'string' && payload[key].includes('@')) {
+                                return { email: payload[key], payload };
+                            }
+                        }
+                        for (const key in payload) {
+                            const lowKey = key.toLowerCase();
+                            if (lowKey.includes('email') || lowKey.includes('mail') || lowKey.includes('name')) {
+                                const val = payload[key];
+                                if (typeof val === 'string' && val.includes('@')) return { email: val, payload };
+                            }
+                        }
+                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                        for (const key in payload) {
+                            const val = payload[key];
+                            if (typeof val === 'string' && emailRegex.test(val.trim())) return { email: val.trim(), payload };
+                        }
+                        return { email: null, keys: Object.keys(payload) };
+                    } catch (err) {
+                        return { email: null, error: err.message };
+                    }
+                };
+
+                // Tests whatever token was pasted into the popup's dedicated box, against the active environment's API
+                const testToken = async () => {
+                    const token = tokenToTest.value.trim();
+                    if (!token) return;
+
+                    tokenTest.value = { status: 'testing', success: false, httpStatus: null, email: null, debugKeys: null, decodeError: null };
+
+                    // 1. Decode locally
+                    const decoded = parseAndExtractEmail(token);
+
+                    // 2. Live HTTP check against the current environment's base URL
+                    let success = false;
+                    let httpStatus = 0;
+                    try {
+                        const headerType = authHeaderTypes.value[environment.value] || 'Bearer';
+                        const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
+                        if (headerType === 'Bearer') headers['Authorization'] = `Bearer ${token}`;
+                        else headers[headerType] = token;
+
+                        const res = await fetch(`${baseUrl.value}/api/Tour/countries`, { method: 'GET', headers });
+                        httpStatus = res.status;
+                        success = res.ok;
+                    } catch (e) {
+                        httpStatus = 0;
+                        success = false;
+                    }
+
+                    tokenTest.value = {
+                        status: 'done',
+                        success,
+                        httpStatus,
+                        email: decoded.email || null,
+                        debugKeys: decoded.keys ? JSON.stringify(decoded.keys) : null,
+                        decodeError: decoded.error || null
+                    };
+                };
 
                 // Active interactive coordinates & states
                 const showPopoverCard = ref(false);
@@ -1375,7 +1566,8 @@
                     showTransferGuide, transferTypes,
                     fetchTourOptions, getTransfersForOptionLive,
                     isNonRefundable, getCancellationBadgeClass,
-                    showPopoverCard, activeOptionId, activeTourId, activeTriggerEl, popoverX, popoverY, togglePopover, bezierPaths
+                    showPopoverCard, activeOptionId, activeTourId, activeTriggerEl, popoverX, popoverY, togglePopover, bezierPaths,
+                    showTokenTester, tokenToTest, tokenTest, testToken, openTokenTester
                 };
             }
         }).mount('#app');
