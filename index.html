@@ -1410,8 +1410,20 @@
                         lastSyncStore.value[syncEnv] = new Date().toLocaleString();
                         loadedEnvs.value[syncEnv] = true;
 
-                        // Save to Supabase in batches
-                        progress.value = { current: 0, total: 4, label: 'Saving to Supabase', subLabel: 'Uploading cities...' };
+                        // ============================================================
+                        // FIX: Clear out this environment's OLD rows before writing the
+                        // new sync. Previously we only used upsert(), which inserts new
+                        // rows and updates matching ones, but NEVER deletes rows that
+                        // existed in a prior sync but are no longer present in this one.
+                        // That stale data was piling up in Supabase and reappearing
+                        // whenever the app reloaded and re-fetched from the database.
+                        // ============================================================
+                        progress.value = { current: 0, total: 5, label: 'Saving to Supabase', subLabel: 'Clearing previous sync data...' };
+                        await supabase.from('rayna_cities').delete().eq('environment', syncEnv);
+                        await supabase.from('rayna_tours').delete().eq('environment', syncEnv);
+                        await supabase.from('rayna_options').delete().eq('environment', syncEnv);
+                        progress.value.current = 1; progress.value.subLabel = 'Uploading cities...';
+
                         const BATCH = 500;
 
                         // Cities
@@ -1419,7 +1431,7 @@
                         for (let i = 0; i < cityRows.length; i += BATCH) {
                             await supabase.from('rayna_cities').upsert(cityRows.slice(i, i + BATCH), { onConflict: 'city_id,environment' });
                         }
-                        progress.value.current = 1; progress.value.subLabel = 'Uploading tours...';
+                        progress.value.current = 2; progress.value.subLabel = 'Uploading tours...';
 
                         // Tours
                         const tourRows = newData.tours.map(t => ({
@@ -1436,7 +1448,7 @@
                         for (let i = 0; i < tourRows.length; i += BATCH) {
                             await supabase.from('rayna_tours').upsert(tourRows.slice(i, i + BATCH), { onConflict: 'tour_id,city_id,environment' });
                         }
-                        progress.value.current = 2; progress.value.subLabel = 'Uploading options...';
+                        progress.value.current = 3; progress.value.subLabel = 'Uploading options...';
 
                         // Options
                         const optRows = newData.options.map(o => ({
@@ -1446,11 +1458,11 @@
                         for (let i = 0; i < optRows.length; i += BATCH) {
                             await supabase.from('rayna_options').upsert(optRows.slice(i, i + BATCH), { onConflict: 'tour_option_id,tour_id,environment' });
                         }
-                        progress.value.current = 3; progress.value.subLabel = 'Saving sync log...';
+                        progress.value.current = 4; progress.value.subLabel = 'Saving sync log...';
 
                         // Sync log
                         await supabase.from('rayna_sync').insert({ synced_at: new Date().toISOString(), environment: syncEnv, tour_count: newData.tours.length, option_count: newData.options.length, city_count: newData.cities.length });
-                        progress.value.current = 4;
+                        progress.value.current = 5;
 
                         // Keep auth in localStorage only
                         localStorage.removeItem(STORAGE_KEY);
