@@ -140,63 +140,68 @@
                 <span class="text-sm font-bold text-gray-600">Loading from Supabase...</span>
             </div>
 
-            <!-- Header Section -->
-            <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-                <div class="flex-shrink-0">
+            <!-- Header Section with Compact Controls -->
+            <div class="flex flex-col lg:flex-row items-center justify-between mb-6 gap-3">
+                <div class="flex-shrink-0 flex items-center justify-between w-full lg:w-auto">
                     <a href="https://raynab2b.com" target="_blank" class="block transition-transform hover:scale-105 active:scale-95">
-                        <img src="https://d1i3enf1i5tb1f.cloudfront.net/assets/Images/AGT-31082/logo.png" alt="Rayna Tours Logo" class="h-10 md:h-12 w-auto object-contain">
+                        <img src="https://d1i3enf1i5tb1f.cloudfront.net/assets/Images/AGT-31082/logo.png" alt="Rayna Tours Logo" class="h-9 md:h-11 w-auto object-contain">
                     </a>
+                    <h1 class="lg:hidden text-base font-black text-gray-900 tracking-tight uppercase">
+                        Tour Information
+                    </h1>
                 </div>
 
-                <h1 class="hidden lg:block text-xl font-black text-gray-900 tracking-tight uppercase">
+                <h1 class="hidden lg:block text-lg font-black text-gray-900 tracking-tight uppercase">
                     Tour Information
                 </h1>
 
-                <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                <!-- Compact Action Controls Group -->
+                <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end">
                     <!-- Environment Toggle -->
-                    <div class="relative w-full sm:w-40">
-                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Environment</label>
+                    <div class="relative w-32">
+                        <label class="text-[8px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Env</label>
                         <button
                             type="button"
                             @click="environment = environment === 'live' ? 'sandbox' : 'live'"
-                            :class="['relative w-full h-10 rounded-xl border shadow-sm transition-colors duration-300 flex items-center px-1', environment === 'live' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200']"
+                            :class="['relative w-full h-9 rounded-xl border shadow-sm transition-colors duration-300 flex items-center px-1', environment === 'live' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200']"
                         >
                             <span :class="['absolute top-1 bottom-1 w-1/2 rounded-lg shadow transition-transform duration-300 ease-out', environment === 'live' ? 'translate-x-0 bg-emerald-500' : 'translate-x-full bg-amber-500']"></span>
-                            <span class="relative z-10 w-1/2 text-center text-[11px] font-black tracking-tight" :class="environment === 'live' ? 'text-white' : 'text-emerald-700'">LIVE</span>
-                            <span class="relative z-10 w-1/2 text-center text-[11px] font-black tracking-tight" :class="environment === 'sandbox' ? 'text-white' : 'text-amber-700'">SANDBOX</span>
+                            <span class="relative z-10 w-1/2 text-center text-[10px] font-black tracking-tight" :class="environment === 'live' ? 'text-white' : 'text-emerald-700'">LIVE</span>
+                            <span class="relative z-10 w-1/2 text-center text-[10px] font-black tracking-tight" :class="environment === 'sandbox' ? 'text-white' : 'text-amber-700'">SAND</span>
                         </button>
                     </div>
 
-                    <!-- Global Travel Date Picker -->
-                    <div class="relative w-full sm:w-44">
-                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Travel Date</label>
+                    <!-- Compact Travel Date Picker -->
+                    <div class="relative w-36">
+                        <label class="text-[8px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Travel Date</label>
                         <input
                             type="date"
                             v-model="selectedTravelDate"
-                            class="w-full text-xs font-bold p-2.5 h-10 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                            class="w-full text-xs font-bold px-2.5 h-9 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
                         />
                     </div>
 
                     <!-- API Token Input -->
-                    <div class="relative flex w-full sm:w-56 md:w-64">
-                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">
-                            {{ environment === 'live' ? '🟢 Live' : '🟡 Sandbox' }} API Key
+                    <div class="relative flex w-44">
+                        <label class="text-[8px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">
+                            {{ environment === 'live' ? '🟢 Live' : '🟡 Sandbox' }} Key
                         </label>
                         <input
                             type="password"
                             v-model="apiKeys[environment]"
-                            :placeholder="environment === 'live' ? 'Enter Live Key...' : 'Enter Sandbox Key...'"
-                            class="w-full text-xs p-2 h-10 rounded-xl border outline-none transition-all shadow-sm border-gray-200 focus:ring-2 focus:ring-gray-400"
+                            :placeholder="environment === 'live' ? 'Live Key...' : 'Sandbox Key...'"
+                            class="w-full text-xs px-3 h-9 rounded-xl border outline-none transition-all shadow-sm bg-white"
                             :class="environment === 'live' ? 'border-emerald-200 focus:ring-2 focus:ring-emerald-400' : 'border-amber-200 focus:ring-2 focus:ring-amber-400'"
                         />
                     </div>
 
                     <!-- Action Buttons -->
-                    <div class="flex gap-2 w-full sm:w-auto">
+                    <div class="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
                         <button 
                             @click="startUAEDataCrawl"
                             :disabled="isCrawling || isLoading"
-                            :class="['px-4 py-2 text-white rounded-xl font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[90px]', environment === 'live' ? 'bg-gray-900 hover:bg-black' : 'bg-amber-600 hover:bg-amber-700']"
+                            class="px-3 py-2 text-white rounded-xl font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                            :class="environment === 'live' ? 'bg-gray-900 hover:bg-black' : 'bg-amber-600 hover:bg-amber-700'"
                         >
                             <svg v-if="isCrawling" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                             {{ isCrawling ? 'Syncing...' : 'Sync Data' }}
@@ -204,19 +209,19 @@
                         <button
                             @click="loadFromSupabase()"
                             :disabled="isCrawling || isLoading"
-                            class="px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
+                            class="px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1 shadow-sm"
                         >
                             Refresh
                         </button>
                         <button
                             @click="showTransferGuide = true"
-                            class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                            class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1 shadow-sm whitespace-nowrap"
                         >
                             Transfer Guide
                         </button>
                         <button
                             @click="openTokenTester"
-                            class="px-3 py-2 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
+                            class="px-3 py-2 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1 shadow-sm whitespace-nowrap"
                         >
                             Test Token
                         </button>
@@ -519,9 +524,9 @@
                                     <span class="font-mono font-bold text-purple-900 bg-purple-50 px-2 py-0.5 rounded">{{ slot.timeSlot }}</span>
                                     <span class="text-[10px] text-gray-400">({{ slot.available }} left)</span>
                                 </div>
-                                <div class="text-right">
-                                    <div class="text-[11px] font-bold text-emerald-600">A: {{ slot.adultPrice || t.adultPrice }}</div>
-                                    <div class="text-[11px] font-bold text-blue-600">C: {{ slot.childPrice || t.childPrice }}</div>
+                                <div class="text-right" v-if="slot.isDynamicPrice">
+                                    <div class="text-[11px] font-bold text-emerald-600">A: {{ slot.adultPrice }}</div>
+                                    <div class="text-[11px] font-bold text-blue-600">C: {{ slot.childPrice }}</div>
                                 </div>
                             </div>
                         </div>
@@ -651,6 +656,17 @@
                     <svg v-if="tokenTest.status === 'testing'" class="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                     {{ tokenTest.status === 'testing' ? 'Testing...' : 'Verify & Call API' }}
                 </button>
+                
+                <div v-if="tokenTest.status === 'done'" class="space-y-3">
+                    <div :class="['rounded-2xl p-3 border flex items-center justify-between', tokenTest.success ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50']">
+                        <span :class="['text-xs font-black', tokenTest.success ? 'text-emerald-700' : 'text-red-700']">
+                            HTTP Status: {{ tokenTest.httpStatus }}
+                        </span>
+                        <span :class="['px-2 py-0.5 rounded text-[10px] font-black uppercase', tokenTest.success ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white']">
+                            {{ tokenTest.success ? 'Passed' : 'Failed' }}
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -845,8 +861,8 @@
                     const env = environment.value;
                     const travelDate = selectedTravelDate.value;
                     const cacheKey = `${env}_${tourId}_${travelDate}`;
-                    if (tourOptionsCache.value[cacheKey]) return;
-
+                    
+                    // Clear or fetch if date changed
                     tourOptionsCache.value[cacheKey] = { loading: true, data: null, error: null };
                     
                     try {
@@ -1194,7 +1210,6 @@
                             await sleep(40);
                         }
 
-                        // Finalize options
                         progress.value = { current: 0, total: newData.tours.length, label: 'Finalizing', subLabel: 'Linking Service Options...' };
                         for (let i = 0; i < newData.tours.length; i++) {
                             const tour = newData.tours[i];
