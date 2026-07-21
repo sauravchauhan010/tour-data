@@ -70,7 +70,6 @@
             font-weight: 700;
         }
         
-        /* Ensure the select text doesn't get cut off */
         select {
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -81,17 +80,17 @@
             transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .row-hover-highlight:hover {
-            background-color: rgba(239, 246, 255, 0.55) !important; /* Soft premium blue */
+            background-color: rgba(239, 246, 255, 0.55) !important;
         }
         .option-hover-highlight {
             transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .option-hover-highlight:hover {
-            background-color: rgba(245, 243, 255, 0.65) !important; /* Soft premium purple */
+            background-color: rgba(245, 243, 255, 0.65) !important;
         }
         .active-option-row {
-            background-color: rgba(238, 242, 255, 0.9) !important; /* Rich highlighted indigo */
-            box-shadow: inset 4px 0 0 0 #4f46e5 !important; /* Solid accent bar */
+            background-color: rgba(238, 242, 255, 0.9) !important;
+            box-shadow: inset 4px 0 0 0 #4f46e5 !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
@@ -135,11 +134,11 @@
 
         <div class="max-w-[1600px] mx-auto">
             
-                <!-- Loading overlay -->
-                <div v-if="isLoading" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3">
-                    <svg class="animate-spin w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                    <span class="text-sm font-bold text-gray-600">Loading from Supabase...</span>
-                </div>
+            <!-- Loading overlay -->
+            <div v-if="isLoading" class="fixed inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-3">
+                <svg class="animate-spin w-8 h-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+                <span class="text-sm font-bold text-gray-600">Loading from Supabase...</span>
+            </div>
 
             <!-- Header Section -->
             <div class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
@@ -154,79 +153,71 @@
                 </h1>
 
                 <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
-                    <!-- Live / Sandbox Slider Toggle -->
-                    <div class="relative w-full sm:w-44">
+                    <!-- Environment Toggle -->
+                    <div class="relative w-full sm:w-40">
                         <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Environment</label>
                         <button
                             type="button"
                             @click="environment = environment === 'live' ? 'sandbox' : 'live'"
                             :class="['relative w-full h-10 rounded-xl border shadow-sm transition-colors duration-300 flex items-center px-1', environment === 'live' ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200']"
                         >
-                            <!-- Sliding pill -->
-                            <span
-                                :class="['absolute top-1 bottom-1 w-1/2 rounded-lg shadow transition-transform duration-300 ease-out', environment === 'live' ? 'translate-x-0 bg-emerald-500' : 'translate-x-full bg-amber-500']"
-                            ></span>
-                            <!-- Labels -->
+                            <span :class="['absolute top-1 bottom-1 w-1/2 rounded-lg shadow transition-transform duration-300 ease-out', environment === 'live' ? 'translate-x-0 bg-emerald-500' : 'translate-x-full bg-amber-500']"></span>
                             <span class="relative z-10 w-1/2 text-center text-[11px] font-black tracking-tight" :class="environment === 'live' ? 'text-white' : 'text-emerald-700'">LIVE</span>
                             <span class="relative z-10 w-1/2 text-center text-[11px] font-black tracking-tight" :class="environment === 'sandbox' ? 'text-white' : 'text-amber-700'">SANDBOX</span>
                         </button>
                     </div>
-                    <div class="relative flex w-full sm:w-64 md:w-80">
+
+                    <!-- Global Travel Date Picker -->
+                    <div class="relative w-full sm:w-44">
+                        <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">Travel Date</label>
+                        <input
+                            type="date"
+                            v-model="selectedTravelDate"
+                            class="w-full text-xs font-bold p-2.5 h-10 rounded-xl border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                        />
+                    </div>
+
+                    <!-- API Token Input -->
+                    <div class="relative flex w-full sm:w-56 md:w-64">
                         <label class="text-[9px] font-black text-gray-400 uppercase absolute -top-2 left-2 bg-white px-1 z-20">
-                            {{ environment === 'live' ? '🟢 Live' : '🟡 Sandbox' }} API Token / Key
+                            {{ environment === 'live' ? '🟢 Live' : '🟡 Sandbox' }} API Key
                         </label>
                         <input
                             type="password"
                             v-model="apiKeys[environment]"
                             :placeholder="environment === 'live' ? 'Enter Live Key...' : 'Enter Sandbox Key...'"
-                            class="w-full text-xs p-2 rounded-xl border outline-none transition-all shadow-sm border-gray-200 focus:ring-2 focus:ring-gray-400"
+                            class="w-full text-xs p-2 h-10 rounded-xl border outline-none transition-all shadow-sm border-gray-200 focus:ring-2 focus:ring-gray-400"
                             :class="environment === 'live' ? 'border-emerald-200 focus:ring-2 focus:ring-emerald-400' : 'border-amber-200 focus:ring-2 focus:ring-amber-400'"
                         />
                     </div>
+
+                    <!-- Action Buttons -->
                     <div class="flex gap-2 w-full sm:w-auto">
-                        <!-- Sync Data Button -->
                         <button 
                             @click="startUAEDataCrawl"
                             :disabled="isCrawling || isLoading"
-                            :class="['flex-1 px-4 py-2 text-white rounded-xl font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[100px]', environment === 'live' ? 'bg-gray-900 hover:bg-black' : 'bg-amber-600 hover:bg-amber-700']"
+                            :class="['px-4 py-2 text-white rounded-xl font-bold text-xs disabled:opacity-50 flex items-center justify-center gap-2 transition-all min-w-[90px]', environment === 'live' ? 'bg-gray-900 hover:bg-black' : 'bg-amber-600 hover:bg-amber-700']"
                         >
                             <svg v-if="isCrawling" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
                             {{ isCrawling ? 'Syncing...' : 'Sync Data' }}
                         </button>
-
-                        <!-- Refresh Button -->
                         <button
                             @click="loadFromSupabase()"
                             :disabled="isCrawling || isLoading"
-                            title="Reload from Supabase"
                             class="px-3 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-1.5 transition-all"
                         >
-                            <svg v-if="isLoading" class="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
-                            {{ isLoading ? 'Loading...' : 'Refresh' }}
+                            Refresh
                         </button>
-
-                        <!-- Transfer Guide Toggle Button -->
                         <button
                             @click="showTransferGuide = true"
                             class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="16 3 21 8 16 13"></polyline>
-                                <line x1="21" y1="8" x2="9" y2="8"></line>
-                                <polyline points="8 21 3 16 8 11"></polyline>
-                                <line x1="3" y1="16" x2="15" y2="16"></line>
-                            </svg>
                             Transfer Guide
                         </button>
-
-                        <!-- Test Token Popup Toggle Button -->
                         <button
                             @click="openTokenTester"
-                            title="Test a token"
                             class="px-3 py-2 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-9.6 9.6"/><path d="M15.5 7.5 20 12l-2.5 6.5L12 21l-3-3 2-2"/><path d="M2 22c1.1-1.1 3-3 3-3"/><circle cx="7" cy="17" r="1"/></svg>
                             Test Token
                         </button>
                     </div>
@@ -248,8 +239,8 @@
                         />
                     </div>
 
-                    <!-- Enhanced Category Filter Dropdown (Wider with Tour Count) -->
-                    <div class="w-full lg:w-[420px] relative">
+                    <!-- Category Filter -->
+                    <div class="w-full lg:w-[380px] relative">
                         <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Tour Type</label>
                         <select 
                             v-model="selectedCategory"
@@ -266,7 +257,7 @@
                     </div>
 
                     <!-- Country Filter -->
-                    <div class="w-full lg:w-[260px] relative">
+                    <div class="w-full lg:w-[220px] relative">
                         <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">Country</label>
                         <select
                             v-model="selectedCountry"
@@ -282,8 +273,8 @@
                         </div>
                     </div>
 
-                    <!-- City / Location Filter -->
-                    <div class="w-full lg:w-[320px] relative">
+                    <!-- City Filter -->
+                    <div class="w-full lg:w-[260px] relative">
                         <label class="text-[10px] font-black text-gray-400 uppercase absolute -top-2 left-3 bg-white px-1 z-10">City</label>
                         <select
                             v-model="selectedCity"
@@ -368,10 +359,10 @@
                                         </div>
                                     </td>
                                     
-                                    <!-- Dedicated Cancellation Policy Column with conditional colors -->
+                                    <!-- Cancellation Policy Column -->
                                     <td class="px-6 py-4">
                                         <div v-if="res.cancellationPolicy" 
-                                              :class="['inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border shadow-xs max-w-full shrink-0', getCancellationBadgeClass(res.cancellationPolicy)]">
+                                             :class="['inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-medium border shadow-xs max-w-full shrink-0', getCancellationBadgeClass(res.cancellationPolicy)]">
                                             <svg v-if="isNonRefundable(res.cancellationPolicy)" xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                             </svg>
@@ -396,7 +387,7 @@
                                     </td>
                                 </tr>
 
-                                <!-- Nested Options Row Rendering with dynamic Active state highlight -->
+                                <!-- Nested Options Row Rendering -->
                                 <template v-if="res.type === 'Tour' && res.nestedOptions && res.nestedOptions.length > 0">
                                     <tr v-for="opt in res.nestedOptions" 
                                         :key="'opt'+opt.id" 
@@ -431,7 +422,6 @@
                                             </div>
                                         </td>
                                         
-                                        <!-- Aligned empty cancellation policy td for Option Row -->
                                         <td class="px-6 py-2.5">
                                             <span class="text-xs text-gray-300">-</span>
                                         </td>
@@ -467,11 +457,11 @@
         <!-- Real-Time Floating Popover Portal -->
         <div v-if="showPopoverCard" 
              :style="{ top: popoverY + 'px', left: popoverX + 'px' }" 
-             class="fixed z-50 w-72 bg-white rounded-3xl shadow-2xl border border-gray-150 p-5 transition-all duration-150 transform hover:scale-[1.02]"
+             class="fixed z-50 w-80 bg-white rounded-3xl shadow-2xl border border-gray-150 p-5 transition-all duration-150 transform hover:scale-[1.02]"
              @click.stop
         >
             <div class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center justify-between">
-                <span>Live Transfer Query</span>
+                <span>Live Query ({{ selectedTravelDate }})</span>
                 <span class="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md font-mono">ID: {{ activeOptionId }}</span>
             </div>
             
@@ -493,19 +483,51 @@
                 No active transfers found for this setup.
             </div>
             
-            <!-- Result List (Cleaned to show Transfer Name and simple prices) -->
-            <div v-else class="space-y-3 max-h-56 overflow-y-auto custom-scrollbar">
+            <!-- Result List -->
+            <div v-else class="space-y-3 max-h-64 overflow-y-auto custom-scrollbar">
                 <div v-for="t in getTransfersForOptionLive(activeTourId, activeOptionId).data" :key="t.transferId" 
-                     class="p-3 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-orange-50/40 hover:border-orange-200 transition-all flex flex-col gap-1.5"
+                     class="p-3 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-orange-50/40 hover:border-orange-200 transition-all flex flex-col gap-2"
                 >
-                    <span class="text-xs font-bold text-gray-800 leading-snug">{{ t.transferName }}</span>
-                    <div class="flex flex-col gap-0.5">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-gray-800 leading-snug">{{ t.transferName }}</span>
+                        <span v-if="t.isSlot" class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">SLOTS</span>
+                    </div>
+
+                    <!-- Regular Pricing (When not slot or dynamic price is false) -->
+                    <div v-if="!t.isSlot || (slotDataCache[`${environment}_${activeTourId}_${activeOptionId}_${t.transferId}_${selectedTravelDate}`] && !slotDataCache[`${environment}_${activeTourId}_${activeOptionId}_${t.transferId}_${selectedTravelDate}`].hasDynamic)" class="flex flex-col gap-0.5">
                         <span class="text-xs text-emerald-600 font-semibold">
                             Adult: <strong class="font-bold">{{ t.adultPrice }} {{ t.currency || 'AED' }}</strong>
                         </span>
                         <span class="text-xs text-blue-600 font-semibold">
                             Child: <strong class="font-bold">{{ t.childPrice }} {{ t.currency || 'AED' }}</strong>
                         </span>
+                    </div>
+
+                    <!-- Slot-Based Pricing Renderer -->
+                    <div v-if="t.isSlot" class="mt-1 pt-2 border-t border-gray-100">
+                        <div class="text-[10px] font-black text-purple-600 uppercase mb-1.5 flex items-center justify-between">
+                            <span>Time Slots</span>
+                            <span v-if="slotDataCache[`${environment}_${activeTourId}_${activeOptionId}_${t.transferId}_${selectedTravelDate}`]?.loading" class="text-gray-400 font-normal">Loading slots...</span>
+                        </div>
+
+                        <!-- Slot List view -->
+                        <div v-if="slotDataCache[`${environment}_${activeTourId}_${activeOptionId}_${t.transferId}_${selectedTravelDate}`]?.data" class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                            <div v-for="slot in slotDataCache[`${environment}_${activeTourId}_${activeOptionId}_${t.transferId}_${selectedTravelDate}`].data" :key="slot.timeSlotId"
+                                 class="p-2 bg-white rounded-xl border border-purple-100 flex items-center justify-between text-xs"
+                            >
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono font-bold text-purple-900 bg-purple-50 px-2 py-0.5 rounded">{{ slot.timeSlot }}</span>
+                                    <span class="text-[10px] text-gray-400">({{ slot.available }} left)</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-[11px] font-bold text-emerald-600">A: {{ slot.adultPrice || t.adultPrice }}</div>
+                                    <div class="text-[11px] font-bold text-blue-600">C: {{ slot.childPrice || t.childPrice }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="!slotDataCache[`${environment}_${activeTourId}_${activeOptionId}_${t.transferId}_${selectedTravelDate}`]?.loading" class="text-[10px] text-gray-400 italic">
+                            Click to query slots
+                        </div>
                     </div>
                 </div>
             </div>
@@ -527,13 +549,10 @@
         <!-- Transfer Type Guide Slide-over Drawer -->
         <div v-if="showTransferGuide" class="fixed inset-0 z-50 overflow-hidden shadow-2xl" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
             <div class="absolute inset-0 overflow-hidden">
-                <!-- Background backdrop -->
                 <div @click="showTransferGuide = false" class="absolute inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
-
                 <div class="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
                     <div class="pointer-events-auto w-screen max-w-md transform transition-all duration-300 ease-in-out">
                         <div class="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-2xl rounded-l-3xl border-l border-gray-100 custom-scrollbar">
-                            <!-- Drawer Header -->
                             <div class="px-6 pb-4 border-b border-gray-100 flex items-center justify-between">
                                 <div class="flex items-center gap-2.5">
                                     <span class="p-2.5 rounded-xl bg-orange-50 text-orange-600">
@@ -550,23 +569,17 @@
                                     </div>
                                 </div>
                                 <button @click="showTransferGuide = false" class="rounded-xl p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-all">
-                                    <span class="sr-only">Close panel</span>
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
                             </div>
-
-                            <!-- Drawer Content -->
                             <div class="relative flex-1 px-6 py-6 space-y-6">
-                                <!-- Instruction Info Box -->
                                 <div class="bg-orange-50/70 border border-orange-100 rounded-2xl p-4">
                                     <p class="text-xs text-orange-850 font-bold leading-relaxed">
                                         Every product has a default transfer type and the Below id is passed along with the specific product ids.
                                     </p>
                                 </div>
-
-                                <!-- Table perfectly reflecting your uploaded image -->
                                 <div class="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                                     <table class="w-full text-left border-collapse">
                                         <thead>
@@ -596,12 +609,6 @@
                                         </tbody>
                                     </table>
                                 </div>
-
-                                <div class="text-center bg-gray-50 rounded-xl py-3 border border-gray-100">
-                                    <p class="text-[10px] text-gray-400 font-bold tracking-wide uppercase">
-                                        💡 Click any row to instantly copy the Transfer ID.
-                                    </p>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -612,9 +619,7 @@
         <!-- Token Tester Modal -->
         <div v-if="showTokenTester" class="fixed inset-0 z-50 flex items-center justify-center p-4" aria-labelledby="token-tester-title" role="dialog" aria-modal="true">
             <div @click="showTokenTester = false" class="absolute inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
-
             <div class="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-gray-100 p-6 transform transition-all duration-200">
-                <!-- Modal Header -->
                 <div class="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
                     <div class="flex items-center gap-2.5">
                         <span class="p-2.5 rounded-xl bg-gray-900 text-white">
@@ -629,8 +634,6 @@
                         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
-
-                <!-- Dedicated Token Input Box -->
                 <div class="mb-4">
                     <label class="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Paste token to test</label>
                     <textarea
@@ -640,56 +643,14 @@
                         class="w-full text-xs font-mono p-3 rounded-2xl border border-gray-200 focus:ring-2 focus:ring-gray-900 outline-none transition-all bg-gray-50/50 resize-none"
                     ></textarea>
                 </div>
-
                 <button
                     @click="testToken"
                     :disabled="!tokenToTest.trim() || tokenTest.status === 'testing'"
                     class="w-full mb-4 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs disabled:opacity-40 transition-all flex items-center justify-center gap-2"
                 >
                     <svg v-if="tokenTest.status === 'testing'" class="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
-                    <svg v-else xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-9.6 9.6"/><path d="M15.5 7.5 20 12l-2.5 6.5L12 21l-3-3 2-2"/><path d="M2 22c1.1-1.1 3-3 3-3"/><circle cx="7" cy="17" r="1"/></svg>
                     {{ tokenTest.status === 'testing' ? 'Testing...' : 'Verify & Call API' }}
                 </button>
-
-                <!-- Results -->
-                <div v-if="tokenTest.status === 'done'" class="space-y-4">
-                    <!-- Status Card -->
-                    <div :class="['rounded-2xl p-4 border flex items-center justify-between', tokenTest.success ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50']">
-                        <div class="flex items-center gap-3">
-                            <div :class="['p-2 rounded-xl', tokenTest.success ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600']">
-                                <svg v-if="tokenTest.success" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <svg v-else xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                            </div>
-                            <div>
-                                <div class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Connection Status</div>
-                                <h3 :class="['text-sm font-black', tokenTest.success ? 'text-emerald-700' : 'text-red-700']">
-                                    {{ tokenTest.httpStatus === 0 ? 'Blocked / Network Error' : (tokenTest.success ? ('Connected (HTTP ' + tokenTest.httpStatus + ')') : ('Rejected (HTTP ' + tokenTest.httpStatus + ')')) }}
-                                </h3>
-                            </div>
-                        </div>
-                        <span :class="['px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider', tokenTest.success ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white']">
-                            {{ tokenTest.success ? 'Passed' : 'Failed' }}
-                        </span>
-                    </div>
-
-                    <!-- Extracted Email -->
-                    <div class="p-4 bg-gray-50 border border-gray-100 rounded-2xl space-y-2">
-                        <span class="block text-[9px] font-black text-gray-400 uppercase tracking-widest">Extracted User Email</span>
-                        <div class="flex items-start gap-2 text-sm font-bold">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 shrink-0 mt-0.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                            <div class="w-full">
-                                <span :class="['break-all font-mono text-xs', tokenTest.email ? 'text-gray-900' : 'text-gray-400 italic']">
-                                    {{ tokenTest.email || 'No email found inside token payload.' }}
-                                </span>
-                                <div v-if="!tokenTest.email && tokenTest.debugKeys" class="mt-2 pt-2 border-t border-gray-200 text-[10px] text-gray-500">
-                                    <span class="block font-bold mb-1 uppercase tracking-wide text-gray-400">Keys found in token payload:</span>
-                                    <code class="block font-mono bg-white p-2 rounded-lg border border-gray-100 text-gray-600 break-words">{{ tokenTest.debugKeys }}</code>
-                                </div>
-                                <div v-if="tokenTest.decodeError" class="mt-2 text-[10px] text-red-500 font-bold">{{ tokenTest.decodeError }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -702,7 +663,6 @@
                 <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Powered By</span>
                 <span class="text-sm font-black text-blue-600 tracking-tight">Rayna Tours & Travels</span>
             </div>
-            
             <div class="flex items-center gap-3">
                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.25em]">Designed By</span>
                 <a href="https://www.instagram.com/the_volleydrum" target="_blank"
@@ -721,9 +681,8 @@
         const { createClient } = window.supabase;
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Countries to crawl. Add/remove IDs here to change coverage.
         const COUNTRY_IDS = [13063, 15474, 15399];
-        const COUNTRY_NAMES = { 13063: 'UAE', 15474: 'Singapore', 15399: 'India'  }; // update label once known
+        const COUNTRY_NAMES = { 13063: 'UAE', 15474: 'Singapore', 15399: 'India' };
 
         createApp({
             setup() {
@@ -734,7 +693,9 @@
                 const authError = ref('');
                 const isCheckingAuth = ref(false);
 
-                // Transfer types from your uploaded image
+                // Global Date Picker State (Defaults to Today)
+                const selectedTravelDate = ref(new Date().toISOString().slice(0, 10));
+
                 const showTransferGuide = ref(false);
                 const transferTypes = ref([
                     { no: 1, name: 'Without Transfer', id: 41865 },
@@ -744,76 +705,36 @@
                     { no: 5, name: 'Pvt Yach Without Transfer', id: 43110 }
                 ]);
 
-                // ---- Token Tester feature ----
                 const showTokenTester = ref(false);
                 const tokenToTest = ref('');
-                const tokenTest = ref({ status: 'idle', success: false, httpStatus: null, email: null, debugKeys: null, decodeError: null });
+                const tokenTest = ref({ status: 'idle', success: false, httpStatus: null, email: null });
 
-                // Opens the popup with a fresh, empty token box every time
                 const openTokenTester = () => {
                     tokenToTest.value = '';
-                    tokenTest.value = { status: 'idle', success: false, httpStatus: null, email: null, debugKeys: null, decodeError: null };
+                    tokenTest.value = { status: 'idle', success: false, httpStatus: null, email: null };
                     showTokenTester.value = true;
                 };
 
-                // Robust client-side JWT decoding with deep fallback patterns
                 const parseAndExtractEmail = (token) => {
                     try {
-                        if (!token) return { email: null, error: 'Empty token' };
+                        if (!token) return { email: null };
                         const parts = token.trim().split('.');
-                        if (parts.length !== 3) {
-                            return { email: null, error: 'Token format mismatch (JWT requires 3 dot-separated parts)' };
+                        if (parts.length !== 3) return { email: null };
+                        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+                        while (base64.length % 4) base64 += '=';
+                        const payload = JSON.parse(decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+                        for (const k in payload) {
+                            if (typeof payload[k] === 'string' && payload[k].includes('@')) return { email: payload[k] };
                         }
-                        const payloadRaw = parts[1];
-                        const base64UrlDecode = (str) => {
-                            let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-                            while (base64.length % 4) base64 += '=';
-                            return decodeURIComponent(
-                                atob(base64).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
-                            );
-                        };
-                        const payload = JSON.parse(base64UrlDecode(payloadRaw));
-
-                        const targetKeys = [
-                            'email', 'emailaddress', 'email_address', 'mail',
-                            'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress',
-                            'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-                            'upn', 'sub', 'unique_name'
-                        ];
-                        for (const key of targetKeys) {
-                            if (payload[key] && typeof payload[key] === 'string' && payload[key].includes('@')) {
-                                return { email: payload[key], payload };
-                            }
-                        }
-                        for (const key in payload) {
-                            const lowKey = key.toLowerCase();
-                            if (lowKey.includes('email') || lowKey.includes('mail') || lowKey.includes('name')) {
-                                const val = payload[key];
-                                if (typeof val === 'string' && val.includes('@')) return { email: val, payload };
-                            }
-                        }
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        for (const key in payload) {
-                            const val = payload[key];
-                            if (typeof val === 'string' && emailRegex.test(val.trim())) return { email: val.trim(), payload };
-                        }
-                        return { email: null, keys: Object.keys(payload) };
-                    } catch (err) {
-                        return { email: null, error: err.message };
-                    }
+                        return { email: null };
+                    } catch (e) { return { email: null }; }
                 };
 
-                // Tests whatever token was pasted into the popup's dedicated box, against the active environment's API
                 const testToken = async () => {
                     const token = tokenToTest.value.trim();
                     if (!token) return;
-
-                    tokenTest.value = { status: 'testing', success: false, httpStatus: null, email: null, debugKeys: null, decodeError: null };
-
-                    // 1. Decode locally
+                    tokenTest.value = { status: 'testing', success: false, httpStatus: null, email: null };
                     const decoded = parseAndExtractEmail(token);
-
-                    // 2. Live HTTP check against the current environment's base URL
                     let success = false;
                     let httpStatus = 0;
                     try {
@@ -821,26 +742,13 @@
                         const headers = { 'Accept': 'application/json', 'Content-Type': 'application/json' };
                         if (headerType === 'Bearer') headers['Authorization'] = `Bearer ${token}`;
                         else headers[headerType] = token;
-
                         const res = await fetch(`${baseUrl.value}/api/Tour/countries`, { method: 'GET', headers });
                         httpStatus = res.status;
                         success = res.ok;
-                    } catch (e) {
-                        httpStatus = 0;
-                        success = false;
-                    }
-
-                    tokenTest.value = {
-                        status: 'done',
-                        success,
-                        httpStatus,
-                        email: decoded.email || null,
-                        debugKeys: decoded.keys ? JSON.stringify(decoded.keys) : null,
-                        decodeError: decoded.error || null
-                    };
+                    } catch (e) { httpStatus = 0; success = false; }
+                    tokenTest.value = { status: 'done', success, httpStatus, email: decoded.email };
                 };
 
-                // Active interactive coordinates & states
                 const showPopoverCard = ref(false);
                 const activeOptionId = ref(null);
                 const activeTourId = ref(null);
@@ -867,11 +775,8 @@
                             authError.value = 'Incorrect password. Try again.';
                             passwordInput.value = '';
                         }
-                    } catch(e) {
-                        authError.value = e.message;
-                    } finally {
-                        isCheckingAuth.value = false;
-                    }
+                    } catch(e) { authError.value = e.message; }
+                    finally { isCheckingAuth.value = false; }
                 };
 
                 const STORAGE_KEY = 'rayna_uae_data_v2';
@@ -879,7 +784,7 @@
 
                 const apiKeys = ref({ live: '', sandbox: '' });
                 const authHeaderTypes = ref({ live: 'Bearer', sandbox: 'Bearer' });
-                const environment = ref('live'); // 'live' | 'sandbox'
+                const environment = ref('live');
                 const ENV_URLS = {
                     live: 'https://activities.raynatours.com',
                     sandbox: 'https://sandbox.raynatours.com'
@@ -901,20 +806,50 @@
                 const successMsg = ref(null);
                 const progress = ref({ current: 0, total: 0, label: '', subLabel: '' });
 
-                // Cache storage for live queries to saving duplicate API payload roundtrips (Isolated by Environment)
                 const tourOptionsCache = ref({});
+                const slotDataCache = ref({});
 
-                // Fetch options and active transfer ID payload (Isolated by Environment)
+                // Fetch Time Slots using the globally selected date
+                const fetchTimeSlotsForTransfer = async (tourId, optionId, transferId, contractId) => {
+                    const env = environment.value;
+                    const travelDate = selectedTravelDate.value;
+                    const slotKey = `${env}_${tourId}_${optionId}_${transferId}_${travelDate}`;
+                    if (slotDataCache.value[slotKey]) return;
+
+                    slotDataCache.value[slotKey] = { loading: true, data: null, hasDynamic: false, error: null };
+                    try {
+                        const payload = {
+                            tourId: Number(tourId),
+                            tourOptionId: Number(optionId),
+                            travelDate,
+                            transferId: Number(transferId),
+                            adult: 1,
+                            child: 0,
+                            contractId: Number(contractId) || 0
+                        };
+
+                        const response = await fetchWithRetry('/api/Tour/timeslot', payload);
+                        if (response && response.statuscode == 200 && Array.isArray(response.result)) {
+                            const hasDynamic = response.result.some(s => s.isDynamicPrice);
+                            slotDataCache.value[slotKey] = { loading: false, data: response.result, hasDynamic, error: null };
+                        } else {
+                            throw new Error(response?.errormessage || 'No slots available');
+                        }
+                    } catch (err) {
+                        slotDataCache.value[slotKey] = { loading: false, data: [], hasDynamic: false, error: err.message };
+                    }
+                };
+
+                // Fetch Tour Options using the globally selected date
                 const fetchTourOptions = async (tourId, contractId) => {
                     const env = environment.value;
-                    const cacheKey = `${env}_${tourId}`;
-                    // Do not duplicate requests if already cached or fetching
+                    const travelDate = selectedTravelDate.value;
+                    const cacheKey = `${env}_${tourId}_${travelDate}`;
                     if (tourOptionsCache.value[cacheKey]) return;
 
                     tourOptionsCache.value[cacheKey] = { loading: true, data: null, error: null };
                     
                     try {
-                        const travelDate = new Date().toISOString().slice(0, 10); // Standard YYYY-MM-DD
                         const payload = {
                             tourId: Number(tourId),
                             contractId: Number(contractId) || 0,
@@ -926,57 +861,47 @@
 
                         const response = await fetchWithRetry('/api/Tour/touroption', payload);
                         if (response && response.statuscode == 200 && Array.isArray(response.result)) {
-                            tourOptionsCache.value[cacheKey] = {
-                                loading: false,
-                                data: response.result,
-                                error: null
-                            };
+                            tourOptionsCache.value[cacheKey] = { loading: false, data: response.result, error: null };
+                            response.result.forEach(item => {
+                                if (item.isSlot) {
+                                    fetchTimeSlotsForTransfer(tourId, item.tourOptionId, item.transferId, contractId);
+                                }
+                            });
                         } else {
                             throw new Error(response?.errormessage || response?.error || 'No transfers found.');
                         }
                     } catch (err) {
-                        tourOptionsCache.value[cacheKey] = {
-                            loading: false,
-                            data: null,
-                            error: err.message || 'Authentication key or connection error.'
-                        };
+                        tourOptionsCache.value[cacheKey] = { loading: false, data: null, error: err.message || 'Connection error.' };
                     }
                 };
 
-                // Compute exact available transfers for a single nested option dynamically (Isolated by Environment)
                 const getTransfersForOptionLive = (tourId, optionId) => {
                     const env = environment.value;
-                    const cacheKey = `${env}_${tourId}`;
+                    const travelDate = selectedTravelDate.value;
+                    const cacheKey = `${env}_${tourId}_${travelDate}`;
                     const cached = tourOptionsCache.value[cacheKey];
                     if (!cached) return { loading: false, data: null, error: 'Not initialized' };
                     if (cached.loading) return { loading: true, data: null, error: null };
                     if (cached.error) return { loading: false, data: null, error: cached.error };
                     
                     if (Array.isArray(cached.data)) {
-                        // Filter the result set matching this optionId specifically
                         const matched = cached.data.filter(item => String(item.tourOptionId) === String(optionId));
                         return { loading: false, data: matched, error: null };
                     }
                     return { loading: false, data: null, error: 'No data returned' };
                 };
 
-                // Click-toggle dynamic trigger handler
                 const togglePopover = async (event, tourId, optionId, contractId) => {
                     if (activeOptionId.value === optionId) {
-                        // Dismiss popover if selected again
                         dismissPopover();
                         return;
                     }
-
                     activeOptionId.value = optionId;
                     activeTourId.value = tourId;
                     activeTriggerEl.value = event.currentTarget;
                     showPopoverCard.value = true;
 
-                    // Trigger non-blocking cache prefetch
                     await fetchTourOptions(tourId, contractId);
-                    
-                    // Render coordinates and curves
                     recalculatePopoverCoords();
                 };
 
@@ -987,81 +912,59 @@
                     showPopoverCard.value = false;
                 };
 
-                // Re-calculates active targets on scroll and resize transitions
                 const recalculatePopoverCoords = () => {
                     if (!activeTriggerEl.value || !showPopoverCard.value) return;
-
                     const rect = activeTriggerEl.value.getBoundingClientRect();
-                    
-                    // Set contextual coordinates outside boundaries
                     popoverX.value = rect.right + 24; 
                     popoverY.value = rect.top - 36;
-
-                    // Boundaries checks
-                    if (popoverX.value + 288 > window.innerWidth) {
-                        popoverX.value = Math.max(10, rect.left - 312);
+                    if (popoverX.value + 320 > window.innerWidth) {
+                        popoverX.value = Math.max(10, rect.left - 340);
                     }
                 };
 
-                // Computes beautiful curved S-shaped Bezier connector lines matches image_dc9382.png
                 const bezierPaths = computed(() => {
                     if (!activeTriggerEl.value || !showPopoverCard.value) return { top: '', bottom: '' };
-
                     const trigRect = activeTriggerEl.value.getBoundingClientRect();
                     const startX = trigRect.right;
                     const startY = trigRect.top + (trigRect.height / 2);
-
                     const targetX = popoverX.value;
-                    const targetYTop = popoverY.value + 12; // curves meet top-left corner bounds
-                    const targetYBottom = popoverY.value + 168; // curves meet bottom-left corner bounds
-
+                    const targetYTop = popoverY.value + 12;
+                    const targetYBottom = popoverY.value + 168;
                     const c1X = startX + (targetX - startX) * 0.4;
                     const c2X = startX + (targetX - startX) * 0.6;
-
-                    const topPath = `M ${startX} ${startY} C ${c1X} ${startY}, ${c2X} ${targetYTop}, ${targetX} ${targetYTop}`;
-                    const bottomPath = `M ${startX} ${startY} C ${c1X} ${startY}, ${c2X} ${targetYBottom}, ${targetX} ${targetYBottom}`;
-
-                    return { top: topPath, bottom: bottomPath };
+                    return {
+                        top: `M ${startX} ${startY} C ${c1X} ${startY}, ${c2X} ${targetYTop}, ${targetX} ${targetYTop}`,
+                        bottom: `M ${startX} ${startY} C ${c1X} ${startY}, ${c2X} ${targetYBottom}, ${targetX} ${targetYBottom}`
+                    };
                 });
 
-                // Attach scrolling sync handlers directly inside capturing phase
                 const handleScroll = () => {
-                    if (showPopoverCard.value) {
-                        recalculatePopoverCoords();
-                    }
+                    if (showPopoverCard.value) recalculatePopoverCoords();
                 };
 
-                // Separate in-memory store per environment so Live/Sandbox never overwrite each other
                 const makeEmptyEnvData = () => ({
                     countries: COUNTRY_IDS.map(id => ({ countryId: id, countryName: COUNTRY_NAMES[id] || String(id) })),
                     cities: [], tours: [], options: []
                 });
                 const dataStore = ref({ live: makeEmptyEnvData(), sandbox: makeEmptyEnvData() });
                 const lastSyncStore = ref({ live: null, sandbox: null });
-                const loadedEnvs = ref({ live: false, sandbox: false }); // whether we've fetched from Supabase at least once
+                const loadedEnvs = ref({ live: false, sandbox: false });
 
-                // `data` and `lastSync` always reflect the CURRENTLY SELECTED tab/environment
                 const data = computed(() => dataStore.value[environment.value]);
                 const lastSync = computed(() => lastSyncStore.value[environment.value]);
-
                 const isLoading = ref(false);
 
                 const loadFromSupabase = async (envOverride) => {
-                    // Safe verification: Ensure PointerEvent isn't processed as a string environment overrides
                     const env = (typeof envOverride === 'string') ? envOverride : environment.value;
                     isLoading.value = true;
                     try {
-                        // Paginate to get all records past Supabase's 1000 row limit, filtered by environment
                         const fetchAll = async (table) => {
                             const PAGE = 1000;
                             let all = [];
                             let from = 0;
                             while (true) {
                                 const { data: chunk, error } = await supabase
-                                    .from(table)
-                                    .select('*')
-                                    .eq('environment', env)
-                                    .range(from, from + PAGE - 1);
+                                    .from(table).select('*').eq('environment', env).range(from, from + PAGE - 1);
                                 if (error) throw error;
                                 if (!chunk || chunk.length === 0) break;
                                 all = all.concat(chunk);
@@ -1086,7 +989,6 @@
                     finally { isLoading.value = false; }
                 };
 
-                // Switching the Live/Sandbox tab loads that environment's data the first time it's selected
                 watch(environment, async (newEnv) => {
                     dismissPopover();
                     if (!loadedEnvs.value[newEnv] && isAuthenticated.value) {
@@ -1100,23 +1002,15 @@
                         try {
                             const parsed = JSON.parse(savedAuth);
                             if (parsed.live || parsed.sandbox) {
-                                // New per-environment format
                                 apiKeys.value.live = parsed.live?.token || '';
                                 authHeaderTypes.value.live = parsed.live?.type || 'Bearer';
                                 apiKeys.value.sandbox = parsed.sandbox?.token || '';
                                 authHeaderTypes.value.sandbox = parsed.sandbox?.type || 'Bearer';
-                            } else if (parsed.token) {
-                                // Backward compat with old single-token format — assume it was Live
-                                apiKeys.value.live = parsed.token || '';
-                                authHeaderTypes.value.live = parsed.type || 'Bearer';
                             }
-                            // Always default to Live on load; don't restore last-used tab
                             environment.value = 'live';
                         } catch(e) {}
                     }
                     if (isAuthenticated.value) await loadFromSupabase();
-
-                    // Listeners for active popover coordinate recalculations on capturing layers
                     window.addEventListener('scroll', handleScroll, { capture: true, passive: true });
                     window.addEventListener('resize', handleScroll, { passive: true });
                     window.addEventListener('click', dismissPopover);
@@ -1143,11 +1037,7 @@
                         if (t.countryId == null) return;
                         counts[t.countryId] = (counts[t.countryId] || 0) + 1;
                     });
-                    return Object.keys(counts).map(id => ({
-                        id,
-                        name: COUNTRY_NAMES[id] || `Country ${id}`,
-                        count: counts[id]
-                    }));
+                    return Object.keys(counts).map(id => ({ id, name: COUNTRY_NAMES[id] || `Country ${id}`, count: counts[id] }));
                 });
 
                 const lastSyncShort = computed(() => {
@@ -1167,11 +1057,8 @@
                 };
 
                 const getCancellationBadgeClass = (policy) => {
-                    if (isNonRefundable(policy)) {
-                        return 'bg-red-50 text-red-700 border-red-100/80';
-                    } else {
-                        return 'bg-emerald-50 text-emerald-700 border-emerald-100/80';
-                    }
+                    if (isNonRefundable(policy)) return 'bg-red-50 text-red-700 border-red-100/80';
+                    return 'bg-emerald-50 text-emerald-700 border-emerald-100/80';
                 };
 
                 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1205,11 +1092,8 @@
                         try {
                             const url = `${baseUrl.value}${endpoint}`;
                             const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-                            if (currentType === 'Bearer') {
-                                headers['Authorization'] = `Bearer ${currentKey}`;
-                            } else {
-                                headers[currentType] = currentKey;
-                            }
+                            if (currentType === 'Bearer') headers['Authorization'] = `Bearer ${currentKey}`;
+                            else headers[currentType] = currentKey;
                             const options = { method, headers };
                             if (payload && method !== 'GET') options.body = JSON.stringify(payload);
 
@@ -1224,6 +1108,7 @@
                     }
                 };
 
+                // Sync Crawl uses the currently selected Global Travel Date
                 const startUAEDataCrawl = async () => {
                     const env = environment.value;
                     if (!apiKeys.value[env]) { error.value = `Missing API Token for ${env === 'live' ? 'Live' : 'Sandbox'}.`; return; }
@@ -1240,50 +1125,40 @@
                     };
                     const seenTourKeys = new Set();
                     const seenOptionIds = new Set();
-                    const travelDate = new Date().toISOString().slice(0, 10).replace(/-/g, '/');
+                    const travelDate = selectedTravelDate.value.replace(/-/g, '/');
 
                     try {
-                        // Step 1: Fetch cities for every country
                         progress.value = { current: 0, total: COUNTRY_IDS.length, label: 'Initializing', subLabel: 'Fetching Cities...' };
                         for (let ci = 0; ci < COUNTRY_IDS.length; ci++) {
                             const countryId = COUNTRY_IDS[ci];
-                            progress.value.subLabel = `Fetching cities for country ${countryId}...`;
                             try {
                                 const cityRes = await fetchWithRetry('/api/Tour/cities', { CountryId: countryId });
-                                if (cityRes.statuscode != 200) {
-                                    error.value = `Warning: ${cityRes.error || 'Access Denied'} for country ${countryId}. Continuing with other countries.`;
-                                } else {
-                                    const cities = cityRes.result ? cityRes.result.map(c => ({ ...c, countryId })) : [];
-                                    newData.cities.push(...cities);
+                                if (cityRes.statuscode == 200 && cityRes.result) {
+                                    newData.cities.push(...cityRes.result.map(c => ({ ...c, countryId })));
                                 }
-                            } catch (e) {
-                                error.value = `Warning: failed to fetch cities for country ${countryId} (${e.message}). Continuing.`;
-                            }
+                            } catch (e) {}
                             progress.value.current = ci + 1;
                         }
 
-                        if (newData.cities.length === 0) throw new Error('No cities fetched for any country. Aborting sync.');
+                        if (newData.cities.length === 0) throw new Error('No cities fetched. Aborting sync.');
 
-                        // Step 2: Fetch tour IDs from tourlist (per city, keyed by countryId_cityId)
-                        progress.value = { current: 0, total: newData.cities.length, label: 'Fetching Tour List', subLabel: 'Getting Tour IDs per city...' };
-                        const cityTourMap = {}; // "countryId_cityId" -> [{ tourId, contractId, ...pricing }]
+                        progress.value = { current: 0, total: newData.cities.length, label: 'Fetching Tour List', subLabel: `Getting Tour IDs for ${selectedTravelDate.value}...` };
+                        const cityTourMap = {};
                         for (let i = 0; i < newData.cities.length; i++) {
                             const city = newData.cities[i];
                             const key = `${city.countryId}_${city.cityId}`;
-                            progress.value.subLabel = `Tour list for ${city.cityName} (country ${city.countryId})...`;
                             try {
                                 const listRes = await fetchWithRetry('/api/Tour/tourlist', { countryId: city.countryId, cityId: city.cityId, travelDate });
                                 if (listRes.result && Array.isArray(listRes.result)) {
                                     cityTourMap[key] = listRes.result;
                                 }
-                            } catch(e) { /* skip city on error */ }
+                            } catch(e) {}
                             progress.value.current = i + 1;
-                            await sleep(50);
+                            await sleep(40);
                         }
 
-                        // Step 3: Fetch static data per city and merge with tourlist pricing
                         const allCityKeys = Object.keys(cityTourMap);
-                        progress.value = { current: 0, total: allCityKeys.length, label: 'Fetching Tour Details', subLabel: 'Getting static data per city...' };
+                        progress.value = { current: 0, total: allCityKeys.length, label: 'Fetching Tour Details', subLabel: 'Getting static data...' };
                         for (let i = 0; i < allCityKeys.length; i++) {
                             const key = allCityKeys[i];
                             const [countryIdStr, cityIdStr] = key.split('_');
@@ -1292,7 +1167,6 @@
                             const city = newData.cities.find(c => c.cityId === cityId && c.countryId === countryId);
                             const pricingList = cityTourMap[key];
 
-                            progress.value.subLabel = `Static data for ${city?.cityName || cityId}...`;
                             try {
                                 const staticRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId, cityId });
                                 const staticMap = {};
@@ -1300,7 +1174,6 @@
                                     staticRes.result.forEach(t => staticMap[t.tourId] = t);
                                 }
 
-                                // Iterate tourlist IDs — source of truth
                                 pricingList.forEach(p => {
                                     const uniqueKey = `${countryId}-${cityId}-${p.tourId}`;
                                     if (seenTourKeys.has(uniqueKey)) return;
@@ -1308,71 +1181,20 @@
 
                                     const staticData = staticMap[p.tourId];
                                     if (staticData) {
-                                        // Full data — merge static + pricing
-                                        newData.tours.push({
-                                            ...staticData,
-                                            countryId,
-                                            contractId: p.contractId,
-                                            amount: p.amount,
-                                            discount: p.discount,
-                                        });
+                                        newData.tours.push({ ...staticData, countryId, contractId: p.contractId, amount: p.amount, discount: p.discount });
                                     } else {
-                                        // No static data — push pricing only with fallback fields
                                         newData.tours.push({
-                                            tourId: p.tourId,
-                                            countryId,
-                                            contractId: p.contractId,
-                                            amount: p.amount,
-                                            discount: p.discount,
-                                            cityId: cityId,
-                                            cityName: city?.cityName || '',
-                                            tourName: 'No static data found',
-                                            cityTourType: '',
-                                            noStaticData: true,
+                                            tourId: p.tourId, countryId, contractId: p.contractId, amount: p.amount, discount: p.discount,
+                                            cityId: cityId, cityName: city?.cityName || '', tourName: 'No static data found', cityTourType: '', noStaticData: true
                                         });
                                     }
                                 });
-                            } catch(e) { /* skip city on error */ }
+                            } catch(e) {}
                             progress.value.current = i + 1;
-                            await sleep(50);
+                            await sleep(40);
                         }
 
-                        // Step 4: Fetch tourStaticDataById for tours missing static data
-                        const noStaticTours = newData.tours.filter(t => t.noStaticData);
-                        if (noStaticTours.length > 0) {
-                            progress.value = { current: 0, total: noStaticTours.length, label: 'Resolving Missing Data', subLabel: 'Fetching by Tour ID...' };
-                            for (let i = 0; i < noStaticTours.length; i++) {
-                                const tour = noStaticTours[i];
-                                progress.value.subLabel = `Fetching tour ID ${tour.tourId}...`;
-                                try {
-                                    const byIdRes = await fetchWithRetry('/api/Tour/tourStaticDataById', {
-                                        countryId: tour.countryId,
-                                        cityId: tour.cityId,
-                                        tourId: tour.tourId,
-                                        contractId: tour.contractId,
-                                        travelDate
-                                    });
-                                    if (byIdRes.result && byIdRes.result.length > 0) {
-                                        const staticData = byIdRes.result[0];
-                                        // Replace the placeholder entry in newData.tours
-                                        const idx = newData.tours.findIndex(t => t.tourId === tour.tourId && t.cityId === tour.cityId && t.countryId === tour.countryId && t.noStaticData);
-                                        if (idx !== -1) {
-                                            newData.tours[idx] = {
-                                                ...staticData,
-                                                countryId: tour.countryId,
-                                                contractId: tour.contractId,
-                                                amount: tour.amount,
-                                                discount: tour.discount,
-                                            };
-                                        }
-                                    }
-                                } catch(e) { /* keep as noStaticData if fails */ }
-                                progress.value.current = i + 1;
-                                if (i % 10 === 0) await sleep(50);
-                            }
-                        }
-
-                        // Step 5: Fetch tour options per tour
+                        // Finalize options
                         progress.value = { current: 0, total: newData.tours.length, label: 'Finalizing', subLabel: 'Linking Service Options...' };
                         for (let i = 0; i < newData.tours.length; i++) {
                             const tour = newData.tours[i];
@@ -1382,27 +1204,20 @@
                                     let cancellationPolicy = optRes.result.cancellationPolicy || optRes.result.cancellationpolicy || '';
                                     const list = optRes.result.touroption || optRes.result.touroptions || (Array.isArray(optRes.result) ? optRes.result : []);
                                     if (Array.isArray(list)) {
-                                        if (!cancellationPolicy && list.length > 0) {
-                                            cancellationPolicy = list[0].cancellationPolicy || list[0].cancellationpolicy || '';
-                                        }
+                                        if (!cancellationPolicy && list.length > 0) cancellationPolicy = list[0].cancellationPolicy || list[0].cancellationpolicy || '';
                                         list.forEach(opt => {
                                             const uniqueKey = `${tour.tourId}-${opt.tourOptionId}`;
                                             if (!seenOptionIds.has(uniqueKey)) {
                                                 seenOptionIds.add(uniqueKey);
-                                                newData.options.push({
-                                                    tourOptionId: opt.tourOptionId,
-                                                    optionName: opt.optionName,
-                                                    tourId: tour.tourId,
-                                                    cityTourType: tour.cityTourType
-                                                });
+                                                newData.options.push({ tourOptionId: opt.tourOptionId, optionName: opt.optionName, tourId: tour.tourId, cityTourType: tour.cityTourType });
                                             }
                                         });
                                     }
                                     tour.cancellationPolicy = cancellationPolicy;
                                 }
-                            } catch(e) { /* skip tour on error */ }
+                            } catch(e) {}
                             progress.value.current = i + 1;
-                            if (i % 10 === 0) await sleep(50);
+                            if (i % 10 === 0) await sleep(40);
                         }
 
                         const syncEnv = environment.value;
@@ -1410,101 +1225,69 @@
                         lastSyncStore.value[syncEnv] = new Date().toLocaleString();
                         loadedEnvs.value[syncEnv] = true;
 
-                        // ============================================================
-                        // FIX: Clear out this environment's OLD rows before writing the
-                        // new sync. Previously we only used upsert(), which inserts new
-                        // rows and updates matching ones, but NEVER deletes rows that
-                        // existed in a prior sync but are no longer present in this one.
-                        // That stale data was piling up in Supabase and reappearing
-                        // whenever the app reloaded and re-fetched from the database.
-                        // ============================================================
-                        progress.value = { current: 0, total: 5, label: 'Saving to Supabase', subLabel: 'Clearing previous sync data...' };
                         await supabase.from('rayna_cities').delete().eq('environment', syncEnv);
                         await supabase.from('rayna_tours').delete().eq('environment', syncEnv);
                         await supabase.from('rayna_options').delete().eq('environment', syncEnv);
-                        progress.value.current = 1; progress.value.subLabel = 'Uploading cities...';
 
                         const BATCH = 500;
-
-                        // Cities
                         const cityRows = newData.cities.map(c => ({ city_id: c.cityId, city_name: c.cityName, country_id: c.countryId, environment: syncEnv }));
                         for (let i = 0; i < cityRows.length; i += BATCH) {
                             await supabase.from('rayna_cities').upsert(cityRows.slice(i, i + BATCH), { onConflict: 'city_id,environment' });
                         }
-                        progress.value.current = 2; progress.value.subLabel = 'Uploading tours...';
 
-                        // Tours
                         const tourRows = newData.tours.map(t => ({
-                            tour_id: t.tourId, city_id: t.cityId, city_name: t.cityName,
-                            country_id: t.countryId, environment: syncEnv,
-                            contract_id: t.contractId, amount: t.amount, discount: t.discount,
-                            tour_name: t.tourName || null, city_tour_type: t.cityTourType || null,
-                            city_tour_type_id: t.cityTourTypeId || null, duration: t.duration || null,
-                            rating: t.rating || null, review_count: t.reviewCount || null,
-                            image_path: t.imagePath || null, cancellation_policy: t.cancellationPolicy || t.cancellationPolicyName || null,
-                            is_slot: t.isSlot || false, is_seat: t.isSeat || false,
-                            no_static_data: t.noStaticData || false,
+                            tour_id: t.tourId, city_id: t.cityId, city_name: t.cityName, country_id: t.countryId, environment: syncEnv,
+                            contract_id: t.contractId, amount: t.amount, discount: t.discount, tour_name: t.tourName || null,
+                            city_tour_type: t.cityTourType || null, duration: t.duration || null, rating: t.rating || null,
+                            image_path: t.imagePath || null, cancellation_policy: t.cancellationPolicy || null,
+                            is_slot: t.isSlot || false, is_seat: t.isSeat || false, no_static_data: t.noStaticData || false
                         }));
                         for (let i = 0; i < tourRows.length; i += BATCH) {
                             await supabase.from('rayna_tours').upsert(tourRows.slice(i, i + BATCH), { onConflict: 'tour_id,city_id,environment' });
                         }
-                        progress.value.current = 3; progress.value.subLabel = 'Uploading options...';
 
-                        // Options
-                        const optRows = newData.options.map(o => ({
-                            tour_option_id: o.tourOptionId, tour_id: o.tourId, environment: syncEnv,
-                            option_name: o.optionName || null, city_tour_type: o.cityTourType || null
-                        }));
+                        const optRows = newData.options.map(o => ({ tour_option_id: o.tourOptionId, tour_id: o.tourId, environment: syncEnv, option_name: o.optionName || null, city_tour_type: o.cityTourType || null }));
                         for (let i = 0; i < optRows.length; i += BATCH) {
                             await supabase.from('rayna_options').upsert(optRows.slice(i, i + BATCH), { onConflict: 'tour_option_id,tour_id,environment' });
                         }
-                        progress.value.current = 4; progress.value.subLabel = 'Saving sync log...';
 
-                        // Sync log
                         await supabase.from('rayna_sync').insert({ synced_at: new Date().toISOString(), environment: syncEnv, tour_count: newData.tours.length, option_count: newData.options.length, city_count: newData.cities.length });
-                        progress.value.current = 5;
-
-                        // Keep auth in localStorage only
-                        localStorage.removeItem(STORAGE_KEY);
-                        showSuccess(`${syncEnv === 'live' ? 'Live' : 'Sandbox'} database synced successfully!`);
+                        showSuccess(`${syncEnv.toUpperCase()} database synced successfully for ${selectedTravelDate.value}!`);
                     } catch (err) { error.value = err.message; } finally { isCrawling.value = false; }
                 };
 
-                // Pre-built indexes for fast lookup — rebuilt only when data changes
                 const optionsByTourId = ref({});
                 const normalizedTours = ref([]);
                 const normalizedCities = ref([]);
 
                 const buildIndexes = () => {
-                    // Normalize all tours to consistent shape once
                     normalizedTours.value = data.value.tours.map(t => ({
-                        tourId:      t.tour_id       || t.tourId,
-                        contractId:  t.contract_id   || t.contractId || 0, // MAP CONTRACT ID CRITICAL FOR LIVE API HOVER
-                        tourName:    (t.tour_name    || t.tourName    || '').toLowerCase(),
-                        tourNameRaw: t.tour_name     || t.tourName    || '',
-                        cityName:    t.city_name     || t.cityName    || '',
-                        cityTourType:t.city_tour_type|| t.cityTourType|| '',
-                        countryId:   t.country_id    !== undefined ? t.country_id : t.countryId,
-                        noStaticData:t.no_static_data|| t.noStaticData|| false,
+                        tourId: t.tour_id || t.tourId,
+                        contractId: t.contract_id || t.contractId || 0,
+                        tourName: (t.tour_name || t.tourName || '').toLowerCase(),
+                        tourNameRaw: t.tour_name || t.tourName || '',
+                        cityName: t.city_name || t.cityName || '',
+                        cityTourType: t.city_tour_type || t.cityTourType || '',
+                        countryId: t.country_id !== undefined ? t.country_id : t.countryId,
+                        noStaticData: t.no_static_data || t.noStaticData || false,
                         cancellationPolicy: t.cancellation_policy || t.cancellationPolicy || '',
                     }));
 
                     normalizedCities.value = data.value.cities.map(c => ({
-                        cityId:   c.city_id   || c.cityId,
+                        cityId: c.city_id || c.cityId,
                         cityName: c.city_name || c.cityName || '',
                         countryId: c.country_id !== undefined ? c.country_id : c.countryId,
                     }));
 
-                    // Options grouped by tourId for O(1) lookup
                     const map = {};
                     data.value.options.forEach(o => {
                         const tid = String(o.tour_id || o.tourId);
                         if (!map[tid]) map[tid] = [];
                         map[tid].push({
-                            id:      o.tour_option_id || o.tourOptionId,
-                            label:   o.option_name   || o.optionName   || '',
-                            labelLC:(o.option_name   || o.optionName   || '').toLowerCase(),
-                            subType: o.city_tour_type|| o.cityTourType || '',
+                            id: o.tour_option_id || o.tourOptionId,
+                            label: o.option_name || o.optionName || '',
+                            labelLC: (o.option_name || o.optionName || '').toLowerCase(),
+                            subType: o.city_tour_type || o.cityTourType || '',
                         });
                     });
                     optionsByTourId.value = map;
@@ -1514,8 +1297,8 @@
                 watch(() => data.value.options.length, buildIndexes);
 
                 const filteredResults = computed(() => {
-                    const s    = debouncedSearch.value.toLowerCase().trim();
-                    const cat  = selectedCategory.value;
+                    const s = debouncedSearch.value.toLowerCase().trim();
+                    const cat = selectedCategory.value;
                     const city = selectedCity.value;
                     const country = selectedCountry.value;
                     if (!s && cat === 'All Categories' && city === 'All Cities' && country === 'All Countries') return [];
@@ -1525,7 +1308,6 @@
                     const allCities = city === 'All Cities';
                     const allCountries = country === 'All Countries';
 
-                    // City results
                     if (allCats && allCountries && s) {
                         normalizedCities.value.forEach(c => {
                             if (c.cityName.toLowerCase().includes(s) || String(c.cityId) === s) {
@@ -1534,24 +1316,21 @@
                         });
                     }
 
-                    // Tour results — all comparisons on pre-normalized strings
                     normalizedTours.value.forEach(t => {
-                        if (!allCats  && t.cityTourType !== cat)  return;
-                        if (!allCities && t.cityName    !== city) return;
+                        if (!allCats && t.cityTourType !== cat) return;
+                        if (!allCities && t.cityName !== city) return;
                         if (!allCountries && String(t.countryId) !== String(country)) return;
 
                         const matchesSearch = !s || t.tourName.includes(s) || String(t.tourId) === s;
                         const options = optionsByTourId.value[String(t.tourId)] || [];
-                        const matchedOptions = s
-                            ? options.filter(o => matchesSearch || o.labelLC.includes(s) || String(o.id) === s)
-                            : (matchesSearch ? options : []);
+                        const matchedOptions = s ? options.filter(o => matchesSearch || o.labelLC.includes(s) || String(o.id) === s) : (matchesSearch ? options : []);
 
                         if (matchesSearch || matchedOptions.length > 0) {
                             results.push({
                                 type: 'Tour',
                                 label: t.tourNameRaw,
                                 id: t.tourId,
-                                contractId: t.contractId, // PRESERVED DYNAMIC CONTRACT ID MAPPER
+                                contractId: t.contractId,
                                 sub: t.cityName,
                                 subMeta: t.cityTourType,
                                 noStaticData: t.noStaticData,
@@ -1571,15 +1350,13 @@
 
                 return {
                     apiKeys, authHeaderTypes, environment, searchTerm, selectedCategory, selectedCity, selectedCountry,
-                    categoryList, cityList, countryList, isCrawling, isLoading, error, progress, data,
+                    selectedTravelDate, categoryList, cityList, countryList, isCrawling, isLoading, error, progress, data,
                     isAuthenticated, passwordInput, showPassword, authError, isCheckingAuth, checkPassword,
                     startUAEDataCrawl, loadFromSupabase, filteredResults, successMsg, lastSync, lastSyncShort,
-                    iconBgClass, copyId, highlightText,
-                    showTransferGuide, transferTypes,
-                    fetchTourOptions, getTransfersForOptionLive,
-                    isNonRefundable, getCancellationBadgeClass,
+                    iconBgClass, copyId, highlightText, showTransferGuide, transferTypes,
+                    fetchTourOptions, getTransfersForOptionLive, isNonRefundable, getCancellationBadgeClass,
                     showPopoverCard, activeOptionId, activeTourId, activeTriggerEl, popoverX, popoverY, togglePopover, bezierPaths,
-                    showTokenTester, tokenToTest, tokenTest, testToken, openTokenTester
+                    showTokenTester, tokenToTest, tokenTest, testToken, openTokenTester, slotDataCache
                 };
             }
         }).mount('#app');
