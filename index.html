@@ -286,7 +286,7 @@
                             class="w-full p-3 pl-4 rounded-2xl border border-gray-100 focus:ring-2 focus:ring-rose-400 outline-none transition-all bg-gray-50/50 text-xs sm:text-sm font-bold appearance-none cursor-pointer pr-12"
                         >
                             <option value="All Cities">All Cities ({{ data.cities.length }})</option>
-                            <option v-for="c in cityList" :key="c.name" :value="c.name">
+                            <option v-for="c in cityList" :key="c.id" :value="c.id">
                                 {{ c.name }} ({{ c.count }})
                             </option>
                         </select>
@@ -1044,13 +1044,25 @@
                     return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
                 });
 
+                const cityNameById = computed(() => {
+                    const map = {};
+                    normalizedCities.value.forEach(c => { map[String(c.cityId)] = c.cityName; });
+                    return map;
+                });
+
                 const cityList = computed(() => {
                     const counts = {};
+                    const namesById = cityNameById.value;
                     normalizedTours.value.forEach(t => {
                         if (selectedCountry.value !== 'All Countries' && String(t.countryId) !== String(selectedCountry.value)) return;
-                        if (t.cityName) counts[t.cityName] = (counts[t.cityName] || 0) + 1;
+                        if (t.cityId == null) return;
+                        const key = String(t.cityId);
+                        if (!counts[key]) counts[key] = { count: 0, name: namesById[key] || t.cityName || `City ${key}` };
+                        counts[key].count++;
                     });
-                    return Object.keys(counts).sort().map(name => ({ name, count: counts[name] }));
+                    return Object.keys(counts)
+                        .map(id => ({ id, name: counts[id].name, count: counts[id].count }))
+                        .sort((a, b) => a.name.localeCompare(b.name));
                 });
 
                 const countryList = computed(() => {
@@ -1180,7 +1192,38 @@
                         }
 
                         const allCityKeys = Object.keys(cityTourMap);
+
+                        // Phase A: fetch static data for every city, keep the per-city map,
+                        // AND accumulate into a country-wide fallback map. Some tours are
+                        // returned by /api/Tour/tourlist under one cityId (e.g. a "Dubai City"
+                        // entry) but only exist in /api/Tour/tourstaticdata under a different
+                        // cityId (e.g. plain "Dubai"). The country-wide map catches those.
                         progress.value = { current: 0, total: allCityKeys.length, label: 'Fetching Tour Details', subLabel: 'Getting static data...' };
+                        const staticDataByCity = {};
+                        const countryStaticMap = {};
+                        for (let i = 0; i < allCityKeys.length; i++) {
+                            const key = allCityKeys[i];
+                            const [countryIdStr, cityIdStr] = key.split('_');
+                            const countryId = Number(countryIdStr);
+
+                            try {
+                                const staticRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId, cityId: Number(cityIdStr) });
+                                const staticMap = {};
+                                if (staticRes.result && Array.isArray(staticRes.result)) {
+                                    staticRes.result.forEach(t => {
+                                        staticMap[t.tourId] = t;
+                                        countryStaticMap[`${countryId}_${t.tourId}`] = t;
+                                    });
+                                }
+                                staticDataByCity[key] = staticMap;
+                            } catch(e) { staticDataByCity[key] = {}; }
+                            progress.value.current = i + 1;
+                            await sleep(40);
+                        }
+
+                        // Phase B: merge pricing with static data, checking the tour's own
+                        // city first, then falling back to the country-wide map.
+                        progress.value = { current: 0, total: allCityKeys.length, label: 'Linking Tours', subLabel: 'Merging pricing with static data...' };
                         for (let i = 0; i < allCityKeys.length; i++) {
                             const key = allCityKeys[i];
                             const [countryIdStr, cityIdStr] = key.split('_');
@@ -1188,32 +1231,24 @@
                             const cityId = Number(cityIdStr);
                             const city = newData.cities.find(c => c.cityId === cityId && c.countryId === countryId);
                             const pricingList = cityTourMap[key];
+                            const staticMap = staticDataByCity[key] || {};
 
-                            try {
-                                const staticRes = await fetchWithRetry('/api/Tour/tourstaticdata', { countryId, cityId });
-                                const staticMap = {};
-                                if (staticRes.result && Array.isArray(staticRes.result)) {
-                                    staticRes.result.forEach(t => staticMap[t.tourId] = t);
+                            pricingList.forEach(p => {
+                                const uniqueKey = `${countryId}-${cityId}-${p.tourId}`;
+                                if (seenTourKeys.has(uniqueKey)) return;
+                                seenTourKeys.add(uniqueKey);
+
+                                const staticData = staticMap[p.tourId] || countryStaticMap[`${countryId}_${p.tourId}`];
+                                if (staticData) {
+                                    newData.tours.push({ ...staticData, countryId, contractId: p.contractId, amount: p.amount, discount: p.discount });
+                                } else {
+                                    newData.tours.push({
+                                        tourId: p.tourId, countryId, contractId: p.contractId, amount: p.amount, discount: p.discount,
+                                        cityId: cityId, cityName: city?.cityName || '', tourName: 'No static data found', cityTourType: '', noStaticData: true
+                                    });
                                 }
-
-                                pricingList.forEach(p => {
-                                    const uniqueKey = `${countryId}-${cityId}-${p.tourId}`;
-                                    if (seenTourKeys.has(uniqueKey)) return;
-                                    seenTourKeys.add(uniqueKey);
-
-                                    const staticData = staticMap[p.tourId];
-                                    if (staticData) {
-                                        newData.tours.push({ ...staticData, countryId, contractId: p.contractId, amount: p.amount, discount: p.discount });
-                                    } else {
-                                        newData.tours.push({
-                                            tourId: p.tourId, countryId, contractId: p.contractId, amount: p.amount, discount: p.discount,
-                                            cityId: cityId, cityName: city?.cityName || '', tourName: 'No static data found', cityTourType: '', noStaticData: true
-                                        });
-                                    }
-                                });
-                            } catch(e) {}
+                            });
                             progress.value.current = i + 1;
-                            await sleep(40);
                         }
 
                         progress.value = { current: 0, total: newData.tours.length, label: 'Finalizing', subLabel: 'Linking Service Options...' };
@@ -1287,6 +1322,7 @@
                         contractId: t.contract_id || t.contractId || 0,
                         tourName: (t.tour_name || t.tourName || '').toLowerCase(),
                         tourNameRaw: t.tour_name || t.tourName || '',
+                        cityId: t.city_id !== undefined ? t.city_id : t.cityId,
                         cityName: t.city_name || t.cityName || '',
                         cityTourType: t.city_tour_type || t.cityTourType || '',
                         countryId: t.country_id !== undefined ? t.country_id : t.countryId,
@@ -1339,7 +1375,7 @@
 
                     normalizedTours.value.forEach(t => {
                         if (!allCats && t.cityTourType !== cat) return;
-                        if (!allCities && t.cityName !== city) return;
+                        if (!allCities && String(t.cityId) !== String(city)) return;
                         if (!allCountries && String(t.countryId) !== String(country)) return;
 
                         const matchesSearch = !s || t.tourName.includes(s) || String(t.tourId) === s;
